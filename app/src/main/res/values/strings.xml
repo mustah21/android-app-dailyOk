@@ -1,0 +1,17 @@
+<resources>
+    <string name="app_name">DailyOk</string>
+    <string name="welcome_step">Step 1 of 2</string>
+    <string name="welcome_title">Welcome to DailyOK</string>
+    <string name="welcome_subtitle">Tell us a little about yourself. We only ask once.</string>
+    <string name="welcome_name_label">Your name</string>
+    <string name="welcome_email_label">Email</string>
+    <string name="welcome_age_label">Age</string>
+    <string name="welcome_privacy_note">This stays on this phone. We never send it anywhere.</string>
+    <string name="welcome_continue">Continue</string>
+
+    <!-- Validation errors -->
+    <string name="name_required">Please enter your name</string>
+    <string name="invalid_email">Please enter a valid email</string>
+    <string name="invalid_age">Please enter a valid age</string>
+
+</resources>
