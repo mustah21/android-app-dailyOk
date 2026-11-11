@@ -1,11 +1,12 @@
 package com.example.dailyok
 
 import android.app.Application
-import com.example.dailyok.ui.screens.ProfileRepository
+import com.example.dailyok.ui.screens.welcome.ProfileRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
+import java.time.LocalDate
 
 class DailyOkApp : Application() {
     val settings: Settings by lazy { Settings() }
@@ -13,7 +14,7 @@ class DailyOkApp : Application() {
 }
 
 class Settings {
-    private val _onboardingDone = MutableStateFlow(value = false)
+    private val _onboardingDone = MutableStateFlow(value = true)
     val onboardingDone: Flow<Boolean> = _onboardingDone.asStateFlow()
 
     fun setOnboardingDone(done: Boolean) {
@@ -22,7 +23,7 @@ class Settings {
 }
 
 class InMemoryProfileRepository(private val settings: Settings) : ProfileRepository {
-    override suspend fun completeOnboarding(name: String, email: String, age: Int) {
+    override suspend fun completeOnboarding(name: String, email: String, birthDate: LocalDate?) {
         settings.setOnboardingDone(done = true)
     }
 }
