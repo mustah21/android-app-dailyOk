@@ -105,6 +105,11 @@ fun AppNavGraph(app: DailyOkApp) {
                viewModel = helpViewModel,
            )
         }
+        composable(Routes.MEDS) {
+            HelpRoute(
+                viewModel = helpViewModel,
+            )
+        }  // Don't have a meds screen rn so for now goes to meds screen
 
     }
 }
