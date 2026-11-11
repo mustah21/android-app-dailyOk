@@ -16,8 +16,12 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.example.dailyok.DailyOkApp
+import com.example.dailyok.ui.screens.help.HelpRoute
+import com.example.dailyok.ui.screens.help.HelpViewModel
 import com.example.dailyok.ui.screens.home.HomeRoute
 import com.example.dailyok.ui.screens.home.HomeViewModel
+import com.example.dailyok.ui.screens.settings.SettingsRoute
+import com.example.dailyok.ui.screens.settings.SettingsViewModel
 import com.example.dailyok.ui.screens.welcome.WelcomeRoute
 import com.example.dailyok.ui.screens.welcome.WelcomeViewModel
 import kotlinx.coroutines.flow.first
@@ -29,6 +33,7 @@ object Routes {
     const val HOME = "home"
     const val MEDS = "meds"
     const val HELP = "help"
+    const val SETTINGS = "settings"
 }
 
 @RequiresApi(Build.VERSION_CODES.O)
@@ -43,6 +48,8 @@ fun AppNavGraph(app: DailyOkApp) {
     val context = LocalContext.current
 
     val homeViewModel: HomeViewModel = viewModel(factory = HomeViewModel.factory(context))
+    val helpViewModel: HelpViewModel = viewModel()
+    val settingsViewModel: SettingsViewModel = viewModel()
 
     NavHost(
         navController = nav,
@@ -83,17 +90,20 @@ fun AppNavGraph(app: DailyOkApp) {
                 viewModel = homeViewModel,
                 onNeedHelp = { nav.navigate(Routes.HELP)},
                 onMedsClick = { nav.navigate(Routes.MEDS) },
+                onSettingsClick = {nav.navigate(Routes.SETTINGS)}
                 )
         }
 
 
-        composable(Routes.MEDS) {
-            Text("Meds screen")
+        composable(Routes.SETTINGS) {
+            SettingsRoute(viewModel = settingsViewModel)
         }
 
 
         composable(Routes.HELP) {
-            Text("Help screen")
+           HelpRoute(
+               viewModel = helpViewModel,
+           )
         }
 
     }

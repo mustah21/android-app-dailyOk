@@ -30,5 +30,6 @@
     <string name="medication_taken">Taken today ✓</string>
     <string name="medication_mark_taken">I took it</string>
     <string name="checked_in_at">Checked in at %1$s</string>
+    <string name="family_notified"> Family Notified</string>
 
 </resources>

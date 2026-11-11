@@ -18,6 +18,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Call
 import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -25,6 +26,7 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Switch
@@ -63,7 +65,8 @@ fun HomeRoute(
     viewModel: HomeViewModel,
     onNeedHelp: () -> Unit,
     onMedsClick: () -> Unit,
-) {
+    onSettingsClick: () -> Unit,
+    ) {
     val state by viewModel.state.collectAsState()
 
     HomeScreen(
@@ -72,7 +75,8 @@ fun HomeRoute(
         onNeedHelp = onNeedHelp,
         onPauseChanged = viewModel::onPauseChanged,
         onMedsClick = onMedsClick,
-    )
+        onSettingsClick = onSettingsClick,
+        )
 }
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
@@ -83,7 +87,9 @@ fun HomeScreen(
     onPauseChanged: (Boolean) -> Unit,
     onMedsClick: () -> Unit,
     modifier: Modifier = Modifier,
-) {
+    onSettingsClick: () -> Unit,
+
+    ) {
     Scaffold(modifier = modifier) { padding ->
         Column(
             modifier = Modifier
@@ -94,11 +100,30 @@ fun HomeScreen(
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
             // Date
-            Text(
-                text = LocalDate.now().format(DateTimeFormatter.ofPattern("EEEE, MMMM d")),
-                fontSize = 18.sp,
-                color = TextSecondary,
-            )
+// Date + settings
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(
+                    text = LocalDate.now().format(DateTimeFormatter.ofPattern("EEEE, MMMM d")),
+                    fontSize = 18.sp,
+                    color = TextSecondary,
+                    modifier = Modifier.weight(1f),
+                )
+                IconButton(
+                    onClick = onSettingsClick,
+                    modifier = Modifier.size(56.dp),
+                ) {
+                    Icon(
+                        imageVector = Icons.Filled.Settings,
+                        contentDescription = "Settings",
+                        tint = TextSecondary,
+                        modifier = Modifier.size(32.dp),
+                    )
+                }
+            }
 
             Text(
                 text = stringResource(R.string.Hello_Champ),
@@ -277,3 +302,4 @@ private fun MedicationCard(
         }
     }
 }
+

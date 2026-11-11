@@ -82,6 +82,7 @@ class HomeViewModel(context: Context) : ViewModel() {
 
         val now = System.currentTimeMillis()
         prefs.edit().putLong(KEY_LAST_CLICK, now).apply()
+        prefs.edit().putLong(KEY_LAST_CLICK, now).apply()
         _state.update { it.copy(lastOkClickTime = now) }
     }
 
