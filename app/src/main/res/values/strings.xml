@@ -1,17 +1,34 @@
 <resources>
+
+    <!-- Welcome Screen -->
+
     <string name="app_name">DailyOk</string>
     <string name="welcome_step">Step 1 of 2</string>
     <string name="welcome_title">Welcome to DailyOK</string>
     <string name="welcome_subtitle">Tell us a little about yourself. We only ask once.</string>
     <string name="welcome_name_label">Your name</string>
     <string name="welcome_email_label">Email</string>
-    <string name="welcome_age_label">Age</string>
+    <string name="welcome_birthDate_label">DOB</string>
     <string name="welcome_privacy_note">This stays on this phone. We never send it anywhere.</string>
     <string name="welcome_continue">Continue</string>
-
-    <!-- Validation errors -->
+                <!-- Validation errors -->
     <string name="name_required">Please enter your name</string>
     <string name="invalid_email">Please enter a valid email</string>
-    <string name="invalid_age">Please enter a valid age</string>
+    <string name="invalid_birthDate">Date of birth</string>
+
+    <!-- Home Screen -->
+    <string name="Hello_Champ">Hello Champ!</string>
+    <string name="Daily_Ok">Daily Okay?</string>
+    <string name="LET_FAMILY_KNOW"> Let your family know that you are doing well!</string>
+    <string name="NEED_HELP">I NEED HELP</string>
+    <string name="PAUSE_FOR_HOLIDAYS">Pause for holidays</string>
+    <string name="paused_note">Check-ins are paused while you are away.</string>
+    <string name="ok_done_note">You\'ve checked in. Your family knows you\'re OK.</string>
+    <string name="medication_label">Today\'s medicine</string>
+    <string name="medication_take_at">Take at %1$s</string>
+    <string name="medication_due">Time to take it (was due at %1$s)</string>
+    <string name="medication_taken">Taken today ✓</string>
+    <string name="medication_mark_taken">I took it</string>
+    <string name="checked_in_at">Checked in at %1$s</string>
 
 </resources>

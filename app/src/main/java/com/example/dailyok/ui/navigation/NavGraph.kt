@@ -1,8 +1,13 @@
 package com.example.dailyok.ui.navigation
 
+import android.os.Build
+import android.util.Log
+import androidx.annotation.RequiresApi
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.produceState
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.lifecycle.viewmodel.initializer
@@ -11,16 +16,22 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.example.dailyok.DailyOkApp
-import com.example.dailyok.ui.screens.WelcomeRoute
-import com.example.dailyok.ui.screens.WelcomeViewModel
+import com.example.dailyok.ui.screens.home.HomeRoute
+import com.example.dailyok.ui.screens.home.HomeViewModel
+import com.example.dailyok.ui.screens.welcome.WelcomeRoute
+import com.example.dailyok.ui.screens.welcome.WelcomeViewModel
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
 
 object Routes {
     const val WELCOME = "welcome"
     const val CONTACTS = "contacts"
     const val HOME = "home"
+    const val MEDS = "meds"
+    const val HELP = "help"
 }
 
+@RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun AppNavGraph(app: DailyOkApp) {
 
@@ -28,30 +39,64 @@ fun AppNavGraph(app: DailyOkApp) {
         value = app.settings.onboardingDone.first()
     }
     val done = onboardingDone ?: return
-
     val nav = rememberNavController()
     val context = LocalContext.current
+
+    val homeViewModel: HomeViewModel = viewModel(factory = HomeViewModel.factory(context))
+
     NavHost(
         navController = nav,
         startDestination = if (done) Routes.HOME else Routes.WELCOME,
     ) {
         composable(Routes.WELCOME) {
+            val scope = rememberCoroutineScope()
+
             val vm: WelcomeViewModel = viewModel(
                 factory = viewModelFactory {
                     initializer { WelcomeViewModel(app.profileRepository, context) }
                 }
             )
-            WelcomeRoute(vm) {
-                nav.navigate(Routes.CONTACTS) {
-                    popUpTo(Routes.WELCOME) { inclusive = true }
-                }
-            }
+
+            WelcomeRoute(
+                viewModel = vm,
+                onFinished = {
+                    scope.launch {
+                        Log.d("Onboarding", "saving flag")
+                        app.settings.setOnboardingDone(true)
+                        Log.d("Onboarding", "saved")
+                        nav.navigate(Routes.HOME) {
+                            popUpTo(Routes.WELCOME) { inclusive = true }
+                        }
+                    }
+                },
+
+            )
         }
+
         composable(Routes.CONTACTS) {
             // TODO: Implement contacts screen
         }
+
+
         composable(Routes.HOME) {
-            // TODO: Implement home screen
+            HomeRoute(
+                viewModel = homeViewModel,
+                onNeedHelp = { nav.navigate(Routes.HELP)},
+                onMedsClick = { nav.navigate(Routes.MEDS) },
+                )
         }
+
+
+        composable(Routes.MEDS) {
+            Text("Meds screen")
+        }
+
+
+        composable(Routes.HELP) {
+            Text("Help screen")
+        }
+
     }
 }
+
+
