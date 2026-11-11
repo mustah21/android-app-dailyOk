@@ -2,8 +2,6 @@
 [View Trello Board](https://trello.com/b/2uEvflKy/title-here)
 ## Design
 
-DailyOK is designed for older adults, so every screen is built to be **large, high-contrast and simple**. The full rules are in the [Design Style Guide](https://claude.ai/artifact/YZ25mm5DESvsZp74hiRKnB).
-
 ### Principles
 - One message and at most two actions per screen
 - Large text and buttons, single-tap actions only (no swipes or long presses)
