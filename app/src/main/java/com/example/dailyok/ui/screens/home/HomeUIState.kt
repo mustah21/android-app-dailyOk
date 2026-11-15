@@ -31,6 +31,8 @@ data class MedicationReminder(
 data class HomeUiState(
     val isPaused: Boolean = false,
     val lastOkClickTime: Long = 0L,
+    val hasUsageAccess: Boolean = false,
+    val lastActivity: String? = null,
     val medication: MedicationReminder = MedicationReminder()
 ) {
     val isRecent: Boolean

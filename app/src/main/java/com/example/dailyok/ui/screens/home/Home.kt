@@ -1,6 +1,8 @@
 package com.example.dailyok.ui.screens.home
 
+import android.content.Intent
 import android.os.Build
+import android.provider.Settings
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -8,6 +10,7 @@ import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.Button
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -15,12 +18,13 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.compose.LifecycleResumeEffect
 import com.example.dailyok.R
-import java.time.LocalDate
 
 private val TextMain = Color(0xFF1A1A1A)
 private val TextSecondary = Color(0xFF4A4A4A)
@@ -36,6 +40,12 @@ fun HomeRoute(
     onSettingsClick: () -> Unit
 ) {
     val state by viewModel.state.collectAsState()
+    val context = LocalContext.current
+
+    LifecycleResumeEffect(Unit) {
+        viewModel.refresh()
+        onPauseOrDispose { }
+    }
 
     HomeScreen(
         state = state,
@@ -43,7 +53,10 @@ fun HomeRoute(
         onNeedHelp = onNeedHelp,
         onPauseChanged = viewModel::onPauseChanged,
         onMedsClick = onMedsClick,
-        onSettingsClick = onSettingsClick
+        onSettingsClick = onSettingsClick,
+        onGrantUsageAccess = {
+            context.startActivity(Intent(Settings.ACTION_USAGE_ACCESS_SETTINGS))
+        }
     )
 }
 
@@ -56,6 +69,7 @@ fun HomeScreen(
     onPauseChanged: (Boolean) -> Unit,
     onMedsClick: () -> Unit,
     onSettingsClick: () -> Unit,
+    onGrantUsageAccess: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     Scaffold(modifier = modifier) { padding ->
@@ -85,6 +99,22 @@ fun HomeScreen(
                 lastActiveText = state.lastActiveText,
                 onOkClick = onOkClick
             )
+
+            Text(
+                text = "Last phone activity: ${state.lastActivity ?: "none yet"}",
+                fontSize = 18.sp,
+                color = TextSecondary
+            )
+
+            if (!state.hasUsageAccess) {
+                Text(
+                    text = "Usage access is needed to read when you last used your phone.",
+                    color = TextSecondary
+                )
+                Button(onClick = onGrantUsageAccess) {
+                    Text("Grant usage access")
+                }
+            }
 
             MedicationCard(
                 medication = state.medication,
