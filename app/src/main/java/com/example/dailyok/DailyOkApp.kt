@@ -1,6 +1,8 @@
 package com.example.dailyok
 
 import android.app.Application
+import com.example.dailyok.platform.check.ActivityTracker
+import com.example.dailyok.platform.check.CheckScheduler
 import com.example.dailyok.ui.screens.welcome.ProfileRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -11,6 +13,13 @@ import java.time.LocalDate
 class DailyOkApp : Application() {
     val settings: Settings by lazy { Settings() }
     val profileRepository: ProfileRepository by lazy { InMemoryProfileRepository(settings) }
+
+    override fun onCreate() {
+        super.onCreate()
+        // Morning and daytime checks: listen for unlocks/unplugging and set the next check alarm.
+        ActivityTracker.registerSystemSignals(this)
+        CheckScheduler.reschedule(this)
+    }
 }
 
 class Settings {

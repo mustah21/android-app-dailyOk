@@ -52,6 +52,7 @@ fun SettingsRoute(viewModel: SettingsViewModel) {
         onDraftPhoneChange = viewModel::onDraftPhoneChange,
         onSaveContact = viewModel::onSaveContact,
         onDismissDraft = viewModel::onDismissDraft,
+        demoSection = { DemoSection() },
     )
 }
 
@@ -66,6 +67,7 @@ fun SettingsScreen(
     onDraftPhoneChange: (String) -> Unit,
     onSaveContact: () -> Unit,
     onDismissDraft: () -> Unit,
+    demoSection: @Composable () -> Unit = {},
 ) {
     Scaffold { padding ->
         Column(
@@ -122,6 +124,9 @@ fun SettingsScreen(
 
             // Activity log
             ActivityLogSection(state.activity)
+
+            // Demo: mock values for presentations (see DemoSection.kt)
+            demoSection()
         }
 
         state.draft?.let { draft ->
