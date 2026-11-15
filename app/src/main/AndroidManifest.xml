@@ -2,6 +2,10 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
     <uses-permission android:name="android.permission.VIBRATE" />
+    <!-- Daily checks: notification + full-screen "Are you OK?" prompt, exact check alarms -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <uses-permission android:name="android.permission.USE_FULL_SCREEN_INTENT" />
+    <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
 
     <application
         android:name=".DailyOkApp"
@@ -16,6 +20,7 @@
         <activity
             android:name=".MainActivity"
             android:exported="true"
+            android:launchMode="singleTop"
             android:label="@string/app_name"
             android:theme="@style/Theme.DailyOk"
             android:windowSoftInputMode="adjustResize">
@@ -25,6 +30,10 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
+        <receiver
+            android:name=".platform.check.CheckAlarmReceiver"
+            android:exported="false" />
     </application>
 
 </manifest>

@@ -56,6 +56,9 @@ fun CheckInHost(
     showDemoTrigger: Boolean = true,
     onSendAlert: (List<String>) -> Unit = {},   // later: send the real SMS here
     onCancelAlert: () -> Unit = {},              // later: send "all OK, sorry" SMS here
+    promptPending: Boolean = false,              // a background check wants the prompt (CheckScheduler)
+    onPromptShown: () -> Unit = {},              // called once the prompt is on screen
+    onImOk: () -> Unit = {},                     // "I'm OK" pressed: counts as activity
     content: @Composable () -> Unit,             // the normal app (home screen etc.)
 ) {
     var step by rememberSaveable { mutableStateOf(CheckInStep.None) }
@@ -65,6 +68,14 @@ fun CheckInHost(
     fun startAlarm() {
         secondsLeft = timings.alarmSeconds   // set before showing, so the countdown never flashes 0:00
         step = CheckInStep.Alarm
+    }
+
+    // A morning or daytime check asked for the prompt (see CheckScheduler).
+    LaunchedEffect(promptPending) {
+        if (promptPending) {
+            if (step == CheckInStep.None) step = CheckInStep.Prompt
+            onPromptShown()
+        }
     }
 
     // Timers: move to the next step when time runs out.
@@ -86,7 +97,10 @@ fun CheckInHost(
         }
     }
 
-    val imOk = { step = CheckInStep.None }
+    val imOk = {
+        onImOk()
+        step = CheckInStep.None
+    }
 
     Box(Modifier.fillMaxSize()) {
         when (step) {
