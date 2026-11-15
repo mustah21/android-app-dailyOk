@@ -56,7 +56,7 @@ DailyOK checks on the person twice a day and starts the "Are you OK?" flow (prom
 | `platform/check/ActivityTracker.kt` | Records activity and moves the next check. |
 | `platform/check/CheckNotifier.kt` | Full-screen "Are you OK?" notification when the app is closed. |
 
-Tests: `app/src/test/.../domain/CheckEngineTest.kt` covers a normal day, a lie-in, a nap, sleep hours, pause and demo minutes. Run it from Android Studio.
+Tests: `app/src/test/.../domain/CheckEngineTest.kt` covers a normal day, a lie-in, a nap, sleep hours, pause and demo inactivity periods. Run it from Android Studio.
 
 **Permissions:** notifications (asked on first start), full-screen intent, exact alarms. On Android 14 exact alarms are off by default, so a check can fire a few minutes late unless *Alarms & reminders* is allowed for the app.
 
@@ -71,9 +71,9 @@ Tests: `app/src/test/.../domain/CheckEngineTest.kt` covers a normal day, a lie-i
 | Demo mode | On / off (on). Off = real timings: prompt 10 min, alarm 15 min |
 | Prompt waits before alarm | 5–120 s (15 s) |
 | Alarm countdown before SMS | 10–300 s (30 s) |
-| Daytime check after | 1–30 min, 0 = normal hours setting (0) |
+| Inactivity period (daytime check) | Normal, 30 s, 1, 2, 5, 10, 30 or 60 min (Normal = the 2–6 h setting) |
 
-Buttons: **Simulate a missed morning**, **Simulate inactivity** (set the minutes slider first), **Run the check now**, and **Reset check times to normal** (use after simulating a missed morning). A status panel shows the check times, last activity, last prompt and next check.
+Buttons: **Simulate a missed morning**, **Simulate inactivity** (pick a short inactivity period first), **Run the check now**, and **Reset check times to normal** (use after simulating a missed morning). A status panel shows the check times, last activity, last prompt and next check.
 
 Hidden trigger: when demo mode is on, long-press the top-right corner of any screen to start the prompt or the alarm.
 

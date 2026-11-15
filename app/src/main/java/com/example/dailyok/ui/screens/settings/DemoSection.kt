@@ -2,12 +2,15 @@ package com.example.dailyok.ui.screens.settings
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
@@ -41,6 +44,7 @@ import kotlin.math.roundToInt
  * Settings > Demo: mock values and shortcuts for presenting the app.
  * Changes apply immediately and are saved on the phone.
  */
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun DemoSection(modifier: Modifier = Modifier) {
     val context = LocalContext.current
@@ -97,16 +101,31 @@ fun DemoSection(modifier: Modifier = Modifier) {
                     range = DemoConfig.ALARM_SECONDS_RANGE,
                     onChange = { v -> DemoSettings.update(context) { it.copy(alarmSeconds = v) } },
                 )
-                DemoSlider(
-                    label = if (demo.inactivityMinutes == 0) {
-                        "Daytime check: normal setting (hours)"
+                // Inactivity period: how long without activity before the daytime check runs.
+                Text(
+                    if (demo.inactivitySeconds == 0) {
+                        "Inactivity period: normal setting (${store.config().inactivityHours} h)"
                     } else {
-                        "Daytime check after ${demo.inactivityMinutes} min without activity"
+                        "Inactivity period: check after ${DemoConfig.inactivityLabel(demo.inactivitySeconds)} without activity"
                     },
-                    value = demo.inactivityMinutes,
-                    range = DemoConfig.INACTIVITY_MINUTES_RANGE,
-                    onChange = { v -> DemoSettings.update(context) { it.copy(inactivityMinutes = v) }; afterChange() },
+                    style = MaterialTheme.typography.bodyLarge,
                 )
+                FlowRow(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    DemoConfig.INACTIVITY_PRESETS.forEach { seconds ->
+                        FilterChip(
+                            selected = demo.inactivitySeconds == seconds,
+                            onClick = {
+                                DemoSettings.update(context) { it.copy(inactivitySeconds = seconds) }
+                                afterChange()
+                            },
+                            label = { Text(DemoConfig.inactivityLabel(seconds)) },
+                            modifier = Modifier.heightIn(min = 48.dp),
+                        )
+                    }
+                }
             } else {
                 Text(
                     "Real timings: prompt 10 min, alarm 15 min, daytime check in hours.",
@@ -136,8 +155,8 @@ fun DemoSection(modifier: Modifier = Modifier) {
             }
             DemoButton("Simulate inactivity (daytime check)") {
                 // Last activity was just over the inactivity period ago.
-                val minutes = store.config().inactivity.toMinutes() + 1
-                store.setLastActivityForDemo(System.currentTimeMillis() - minutes * 60_000L)
+                val seconds = store.config().inactivity.seconds + 5
+                store.setLastActivityForDemo(System.currentTimeMillis() - seconds * 1_000L)
                 store.clearPrompt()
                 CheckScheduler.runCheck(context)
                 refresh++
@@ -198,7 +217,9 @@ private data class CheckStatus(val text: String) {
             val next = CheckEngine.nextCheckTime(now, lastActivity, lastPrompt, config)
             val text = buildString {
                 appendLine("Wake ${config.wakeTime.hm()} · morning check ${config.morningCheckTime.hm()} · bed ${config.bedTime.hm()}")
-                appendLine("Daytime check after ${config.inactivity.toMinutes()} min" + if (config.paused) " · PAUSED" else "")
+                val demoSeconds = config.demoInactivitySeconds
+                val period = if (demoSeconds == null) "${config.inactivityHours} h" else DemoConfig.inactivityLabel(demoSeconds)
+                appendLine("Daytime check after $period" + if (config.paused) " · PAUSED" else "")
                 appendLine("Last activity: ${lastActivity?.format(fmt) ?: "none"}")
                 appendLine("Last prompt: ${lastPrompt?.format(fmt) ?: "none"}")
                 append("Next check: ${next.format(fmt)}")

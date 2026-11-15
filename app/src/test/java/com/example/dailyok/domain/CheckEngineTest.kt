@@ -105,8 +105,14 @@ class CheckEngineTest {
 
     // ---- Demo ----
 
+    @Test fun `demo inactivity of 30 seconds prompts after 30 seconds`() {
+        val demo = config.copy(demoInactivitySeconds = 30)
+        assertEquals(CheckDecision.AllWell, decide(at(14).plusSeconds(29), lastActivity = at(14), cfg = demo))
+        assertEquals(daytimePrompt, decide(at(14).plusSeconds(30), lastActivity = at(14), cfg = demo))
+    }
+
     @Test fun `demo inactivity of 2 minutes prompts after 2 minutes`() {
-        val demo = config.copy(demoInactivityMinutes = 2)
+        val demo = config.copy(demoInactivitySeconds = 120)
         assertEquals(CheckDecision.AllWell, decide(at(14, 1), lastActivity = at(14), cfg = demo))
         assertEquals(daytimePrompt, decide(at(14, 2), lastActivity = at(14), cfg = demo))
         assertEquals(at(14, 2), next(at(14, 1), lastActivity = at(14), cfg = demo))

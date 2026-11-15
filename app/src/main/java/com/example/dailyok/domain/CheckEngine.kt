@@ -21,8 +21,8 @@ data class CheckConfig(
     val inactivityHours: Int = 4,
     /** Holidays, hospital stays: no checks at all. */
     val paused: Boolean = false,
-    /** Demo only: use this many minutes instead of [inactivityHours]. Null = normal behaviour. */
-    val demoInactivityMinutes: Int? = null,
+    /** Demo only: use this many seconds instead of [inactivityHours]. Null = normal behaviour. */
+    val demoInactivitySeconds: Int? = null,
 ) {
     init {
         require(wakeTime < morningCheckTime && morningCheckTime < bedTime) {
@@ -31,13 +31,13 @@ data class CheckConfig(
         require(inactivityHours in MIN_INACTIVITY_HOURS..MAX_INACTIVITY_HOURS) {
             "inactivityHours must be $MIN_INACTIVITY_HOURS..$MAX_INACTIVITY_HOURS"
         }
-        require(demoInactivityMinutes == null || demoInactivityMinutes in 1..60) {
-            "demoInactivityMinutes must be 1..60"
+        require(demoInactivitySeconds == null || demoInactivitySeconds in 10..3600) {
+            "demoInactivitySeconds must be 10..3600"
         }
     }
 
     val inactivity: Duration
-        get() = demoInactivityMinutes?.let { Duration.ofMinutes(it.toLong()) }
+        get() = demoInactivitySeconds?.let { Duration.ofSeconds(it.toLong()) }
             ?: Duration.ofHours(inactivityHours.toLong())
 
     companion object {

@@ -17,20 +17,27 @@ data class DemoConfig(
     val promptSeconds: Int = 15,
     /** Seconds of alarm countdown before the family is contacted. */
     val alarmSeconds: Int = 30,
-    /** Daytime check after this many minutes without activity. 0 = use the normal hours setting. */
-    val inactivityMinutes: Int = 0,
+    /** Daytime check after this many seconds without activity. 0 = use the normal hours setting. */
+    val inactivitySeconds: Int = 0,
 ) {
     val timings: CheckInTimings
         get() = if (enabled) CheckInTimings(promptSeconds, alarmSeconds) else CheckInTimings.Real
 
-    /** The minutes the check engine should use, or null for the normal hours setting. */
-    val activeInactivityMinutes: Int?
-        get() = if (enabled && inactivityMinutes > 0) inactivityMinutes else null
+    /** The seconds the check engine should use, or null for the normal hours setting. */
+    val activeInactivitySeconds: Int?
+        get() = if (enabled && inactivitySeconds > 0) inactivitySeconds else null
 
     companion object {
         val PROMPT_SECONDS_RANGE = 5..120
         val ALARM_SECONDS_RANGE = 10..300
-        val INACTIVITY_MINUTES_RANGE = 0..30
+        /** Choices shown in Settings > Demo (seconds). 0 = normal hours setting. */
+        val INACTIVITY_PRESETS = listOf(0, 30, 60, 120, 300, 600, 1800, 3600)
+
+        fun inactivityLabel(seconds: Int): String = when {
+            seconds == 0 -> "Normal"
+            seconds < 60 -> "$seconds s"
+            else -> "${seconds / 60} min"
+        }
     }
 }
 
@@ -40,7 +47,7 @@ object DemoSettings {
     private const val KEY_ENABLED = "demo_enabled"
     private const val KEY_PROMPT_S = "demo_prompt_seconds"
     private const val KEY_ALARM_S = "demo_alarm_seconds"
-    private const val KEY_INACTIVITY_MIN = "demo_inactivity_minutes"
+    private const val KEY_INACTIVITY_S = "demo_inactivity_seconds"
 
     private var state: MutableStateFlow<DemoConfig>? = null
 
@@ -55,7 +62,7 @@ object DemoSettings {
             it.copy(
                 promptSeconds = it.promptSeconds.coerceIn(DemoConfig.PROMPT_SECONDS_RANGE),
                 alarmSeconds = it.alarmSeconds.coerceIn(DemoConfig.ALARM_SECONDS_RANGE),
-                inactivityMinutes = it.inactivityMinutes.coerceIn(DemoConfig.INACTIVITY_MINUTES_RANGE),
+                inactivitySeconds = if (it.inactivitySeconds == 0) 0 else it.inactivitySeconds.coerceIn(10, 3600),
             )
         }
         flow.value = new
@@ -63,7 +70,7 @@ object DemoSettings {
             .putBoolean(KEY_ENABLED, new.enabled)
             .putInt(KEY_PROMPT_S, new.promptSeconds)
             .putInt(KEY_ALARM_S, new.alarmSeconds)
-            .putInt(KEY_INACTIVITY_MIN, new.inactivityMinutes)
+            .putInt(KEY_INACTIVITY_S, new.inactivitySeconds)
             .apply()
     }
 
@@ -78,7 +85,7 @@ object DemoSettings {
             enabled = p.getBoolean(KEY_ENABLED, d.enabled),
             promptSeconds = p.getInt(KEY_PROMPT_S, d.promptSeconds),
             alarmSeconds = p.getInt(KEY_ALARM_S, d.alarmSeconds),
-            inactivityMinutes = p.getInt(KEY_INACTIVITY_MIN, d.inactivityMinutes),
+            inactivitySeconds = p.getInt(KEY_INACTIVITY_S, d.inactivitySeconds),
         )
     }
 

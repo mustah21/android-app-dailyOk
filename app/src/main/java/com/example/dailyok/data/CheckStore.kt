@@ -46,7 +46,7 @@ class CheckStore(private val context: Context) {
             inactivityHours = prefs.getInt(KEY_INACTIVITY_HOURS, defaults.inactivityHours)
                 .coerceIn(CheckConfig.MIN_INACTIVITY_HOURS, CheckConfig.MAX_INACTIVITY_HOURS),
             paused = prefs.getBoolean(KEY_PAUSED, false),
-            demoInactivityMinutes = DemoSettings.current(context).activeInactivityMinutes,
+            demoInactivitySeconds = DemoSettings.current(context).activeInactivitySeconds,
         )
     }
 
