@@ -9,6 +9,7 @@ import android.util.Log
 import com.example.dailyok.data.CheckStore
 import com.example.dailyok.domain.CheckDecision
 import com.example.dailyok.domain.CheckEngine
+import com.example.dailyok.platform.usage.UsageActivitySource
 import java.time.LocalDateTime
 import java.time.ZoneId
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -42,6 +43,9 @@ object CheckScheduler {
     fun runCheck(context: Context) {
         val store = CheckStore(context)
         val now = LocalDateTime.now()
+        // checks for latest sync btw it gets the usage after 12 hrs
+        syncPhoneActivity(context, store, now)
+
         val decision = CheckEngine.evaluate(now, store.lastActivity(), store.lastPrompt(), store.config())
         Log.d(TAG, "Check at $now: $decision")
         if (decision is CheckDecision.Prompt) {
@@ -72,6 +76,28 @@ object CheckScheduler {
         }
         Log.d(TAG, "Next check at $next (exact=$canExact)")
     }
+
+    private fun syncPhoneActivity(context: Context, store: CheckStore, now: LocalDateTime) {
+        runCatching {
+            val source = UsageActivitySource(context)
+            if (!source.hasPermission()) return
+
+            val zone = ZoneId.systemDefault()
+            val known = store.lastActivity()
+            val from = known ?: now.minusDays(1)
+            val latest = source.lastActivityBetween(
+                from.atZone(zone).toInstant(),
+                now.atZone(zone).toInstant(),
+            ) ?: return
+
+            val latestLocal = LocalDateTime.ofInstant(latest, zone)
+            if (known == null || latestLocal.isAfter(known)) {
+                store.recordActivity(latestLocal)
+                Log.d(TAG, "Recorded phone activity at $latestLocal")
+            }
+        }.onFailure { Log.w(TAG, "Could not read phone activity", it) }
+    }
+
 
     fun cancel(context: Context) {
         context.getSystemService(AlarmManager::class.java)?.cancel(alarmIntent(context))
