@@ -55,12 +55,12 @@ DailyOK checks on the person twice a day and starts the "Are you OK?" flow (prom
 | `platform/check/CheckAlarmReceiver.kt` | Receives the alarm, works with the screen off and the app closed. |
 | `platform/check/ActivityTracker.kt` | Records activity and moves the next check. |
 | `platform/check/CheckNotifier.kt` | Full-screen "Are you OK?" notification when the app is closed. |
+| `platform/check/CheckService.kt` | Foreground service that keeps activity tracking and check scheduling alive in the background. |
+| `platform/check/BootReceiver.kt` | Restarts background service and reschedules check alarms after device restarts (`BOOT_COMPLETED`). |
 
 Tests: `app/src/test/.../domain/CheckEngineTest.kt` covers a normal day, a lie-in, a nap, sleep hours, pause and demo inactivity periods. Run it from Android Studio.
 
-**Permissions:** notifications (asked on first start), full-screen intent, exact alarms. On Android 14 exact alarms are off by default, so a check can fire a few minutes late unless *Alarms & reminders* is allowed for the app.
-
-**Known limits:** unlocks are only heard while the app's process is running (until the background service from "Resume after restart" is added), and pickups are not counted yet (`PickupDetector` should call `ActivityTracker.record()`).
+**Permissions:** notifications (asked on first start), full-screen intent, exact alarms, boot completed, foreground service. On Android 14 exact alarms are off by default, so a check can fire a few minutes late unless *Alarms & reminders* is allowed for the app.
 
 ## Demo settings
 

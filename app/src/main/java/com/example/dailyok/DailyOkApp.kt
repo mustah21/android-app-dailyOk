@@ -3,6 +3,7 @@ package com.example.dailyok
 import android.app.Application
 import com.example.dailyok.platform.check.ActivityTracker
 import com.example.dailyok.platform.check.CheckScheduler
+import com.example.dailyok.platform.check.CheckService
 import com.example.dailyok.ui.screens.welcome.ProfileRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -19,6 +20,7 @@ class DailyOkApp : Application() {
         // Morning and daytime checks: listen for unlocks/unplugging and set the next check alarm.
         ActivityTracker.registerSystemSignals(this)
         CheckScheduler.reschedule(this)
+        CheckService.start(this)
     }
 }
 

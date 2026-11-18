@@ -7,6 +7,7 @@ import android.content.Intent
 import android.os.Build
 import android.util.Log
 import com.example.dailyok.data.CheckStore
+import com.example.dailyok.data.DemoSettings
 import com.example.dailyok.domain.CheckDecision
 import com.example.dailyok.domain.CheckEngine
 import java.time.LocalDateTime
@@ -27,6 +28,11 @@ object CheckScheduler {
 
     private const val TAG = "CheckScheduler"
     private const val REQUEST_CODE = 4201
+    private const val REQUEST_CODE_PROMPT_TIMEOUT = 4204
+    private const val REQUEST_CODE_ALARM_TIMEOUT = 4205
+
+    const val ACTION_PROMPT_TIMEOUT = "com.example.dailyok.PROMPT_TIMEOUT"
+    const val ACTION_ALARM_TIMEOUT = "com.example.dailyok.ALARM_TIMEOUT"
 
     /** True while a check wants the prompt shown. MainActivity passes it to CheckInHost. */
     private val _promptPending = MutableStateFlow(false)
@@ -45,11 +51,33 @@ object CheckScheduler {
         val decision = CheckEngine.evaluate(now, store.lastActivity(), store.lastPrompt(), store.config())
         Log.d(TAG, "Check at $now: $decision")
         if (decision is CheckDecision.Prompt) {
-            store.recordPrompt()
+            val promptSeconds = DemoSettings.current(context).promptSeconds
+            store.startPromptFlow()
             requestPrompt()                                     // app already open: show it at once
             CheckNotifier.showPrompt(context, decision.reason)  // app closed or screen off
+            scheduleTimeout(context, ACTION_PROMPT_TIMEOUT, REQUEST_CODE_PROMPT_TIMEOUT, promptSeconds)
         }
         reschedule(context)
+    }
+
+    fun onPromptTimeout(context: Context) {
+        val store = CheckStore(context)
+        if (store.checkInStep() == "NONE") return
+        Log.d(TAG, "Prompt timeout: starting Alarm phase")
+        val alarmSeconds = DemoSettings.current(context).alarmSeconds
+        store.startAlarmFlow()
+        requestPrompt()
+        CheckNotifier.showAlarm(context)
+        scheduleTimeout(context, ACTION_ALARM_TIMEOUT, REQUEST_CODE_ALARM_TIMEOUT, alarmSeconds)
+    }
+
+    fun onAlarmTimeout(context: Context) {
+        val store = CheckStore(context)
+        if (store.checkInStep() == "NONE") return
+        Log.d(TAG, "Alarm timeout: starting HelpSent phase")
+        store.startHelpSentFlow()
+        requestPrompt()
+        CheckNotifier.showHelpSent(context)
     }
 
     /** Set (or move) the alarm for the next time a check could be due. */
@@ -74,13 +102,35 @@ object CheckScheduler {
     }
 
     fun cancel(context: Context) {
-        context.getSystemService(AlarmManager::class.java)?.cancel(alarmIntent(context))
+        val am = context.getSystemService(AlarmManager::class.java) ?: return
+        am.cancel(alarmIntent(context))
+        am.cancel(timeoutIntent(context, ACTION_PROMPT_TIMEOUT, REQUEST_CODE_PROMPT_TIMEOUT))
+        am.cancel(timeoutIntent(context, ACTION_ALARM_TIMEOUT, REQUEST_CODE_ALARM_TIMEOUT))
+    }
+
+    private fun scheduleTimeout(context: Context, action: String, requestCode: Int, delaySeconds: Int) {
+        val alarmManager = context.getSystemService(AlarmManager::class.java) ?: return
+        val triggerAtMs = System.currentTimeMillis() + delaySeconds * 1_000L
+        val pending = timeoutIntent(context, action, requestCode)
+        val canExact = Build.VERSION.SDK_INT < Build.VERSION_CODES.S || alarmManager.canScheduleExactAlarms()
+        if (canExact) {
+            alarmManager.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, triggerAtMs, pending)
+        } else {
+            alarmManager.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, triggerAtMs, pending)
+        }
     }
 
     private fun alarmIntent(context: Context): PendingIntent = PendingIntent.getBroadcast(
         context,
         REQUEST_CODE,
         Intent(context, CheckAlarmReceiver::class.java),
+        PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
+    )
+
+    private fun timeoutIntent(context: Context, action: String, requestCode: Int): PendingIntent = PendingIntent.getBroadcast(
+        context,
+        requestCode,
+        Intent(context, CheckAlarmReceiver::class.java).apply { this.action = action },
         PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
     )
 }

@@ -1,7 +1,10 @@
 package com.example.dailyok.ui.screens.settings
 
-
+import android.content.Context
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
+import com.example.dailyok.data.CheckStore
+import com.example.dailyok.platform.check.CheckScheduler
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -43,19 +46,27 @@ data class SettingsUiState(
     val activity: List<ActivityDay> = emptyList(),
 )
 
-class SettingsViewModel : ViewModel() {
+class SettingsViewModel(context: Context) : ViewModel() {
+
+    private val appContext = context.applicationContext
+    private val store = CheckStore(appContext)
 
     private val _state = MutableStateFlow(
         SettingsUiState(
-            contacts = sampleContacts(),
+            contacts = store.contacts(),
+            inactivityHours = store.config().inactivityHours,
             activity = sampleActivity(),
         )
     )
     val state: StateFlow<SettingsUiState> = _state.asStateFlow()
 
     // Inactivity period
-    fun onInactivityHoursChange(hours: Int) =
-        _state.update { it.copy(inactivityHours = hours.coerceIn(MIN_HOURS, MAX_HOURS)) }
+    fun onInactivityHoursChange(hours: Int) {
+        val validHours = hours.coerceIn(MIN_HOURS, MAX_HOURS)
+        store.setInactivityHours(validHours)
+        CheckScheduler.reschedule(appContext)
+        _state.update { it.copy(inactivityHours = validHours) }
+    }
 
     // Contact dialog
     fun onAddContact() =
@@ -93,22 +104,27 @@ class SettingsViewModel : ViewModel() {
         )
         val list = if (d.id == null) s.contacts + saved
         else s.contacts.map { if (it.id == saved.id) saved else it }
+        store.saveContacts(list)
         s.copy(contacts = list, draft = null)
     }
 
-    fun onDeleteContact(id: String) =
-        _state.update { s -> s.copy(contacts = s.contacts.filterNot { it.id == id }) }
+    fun onDeleteContact(id: String) = _state.update { s ->
+        val list = s.contacts.filterNot { it.id == id }
+        store.saveContacts(list)
+        s.copy(contacts = list)
+    }
 
     companion object {
         const val MIN_HOURS = 2
         const val MAX_HOURS = 6
+
+        fun factory(context: Context) = object : ViewModelProvider.Factory {
+            @Suppress("UNCHECKED_CAST")
+            override fun <T : ViewModel> create(modelClass: Class<T>): T =
+                SettingsViewModel(context.applicationContext) as T
+        }
     }
 }
-
-private fun sampleContacts() = listOf(
-    Contact(name = "Anna (daughter)", phone = "+358 40 123 4567"),
-    Contact(name = "Matti (neighbour)", phone = "+358 50 765 4321"),
-)
 
 private fun sampleActivity(): List<ActivityDay> {
     val today = LocalDate.now()

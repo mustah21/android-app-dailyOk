@@ -3,6 +3,7 @@ package com.example.dailyok.ui.screens.home
 import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
+import com.example.dailyok.platform.check.CheckScheduler
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -55,8 +56,8 @@ data class HomeUiState(
 
 class HomeViewModel(context: Context) : ViewModel() {
 
-    private val prefs = context.applicationContext
-        .getSharedPreferences("app_prefs", Context.MODE_PRIVATE)
+    private val appContext = context.applicationContext
+    private val prefs = appContext.getSharedPreferences("app_prefs", Context.MODE_PRIVATE)
 
     private val _state = MutableStateFlow(
         HomeUiState(
@@ -82,12 +83,12 @@ class HomeViewModel(context: Context) : ViewModel() {
 
         val now = System.currentTimeMillis()
         prefs.edit().putLong(KEY_LAST_CLICK, now).apply()
-        prefs.edit().putLong(KEY_LAST_CLICK, now).apply()
         _state.update { it.copy(lastOkClickTime = now) }
     }
 
     fun onPauseChanged(paused: Boolean) {
         prefs.edit().putBoolean(KEY_PAUSED, paused).apply()
+        CheckScheduler.reschedule(appContext)
         _state.update { it.copy(isPaused = paused) }
     }
 

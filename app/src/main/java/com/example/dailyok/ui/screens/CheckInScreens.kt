@@ -19,6 +19,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.LiveRegionMode
@@ -136,6 +137,14 @@ fun HelpSentScreen(
     onCancel: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val formattedContacts = remember(contactNames) {
+        when {
+            contactNames.isEmpty() -> "your contacts"
+            contactNames.size == 1 -> contactNames[0]
+            contactNames.size == 2 -> "${contactNames[0]} and ${contactNames[1]}"
+            else -> "${contactNames.dropLast(1).joinToString(", ")} and ${contactNames.last()}"
+        }
+    }
     Column(
         modifier = modifier
             .fillMaxSize()
@@ -158,7 +167,7 @@ fun HelpSentScreen(
             modifier = Modifier.semantics { heading() },
         )
         Text(
-            text = "We have sent a message to ${contactNames.joinToString(" and ")}.",
+            text = "We have sent a message to $formattedContacts.",
             style = BodyText,
             textAlign = TextAlign.Center,
         )

@@ -18,7 +18,9 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import com.example.dailyok.data.CheckStore
 import com.example.dailyok.ui.screens.AlarmScreen
 import com.example.dailyok.ui.screens.CheckInPromptScreen
 import com.example.dailyok.ui.screens.HelpSentScreen
@@ -65,39 +67,87 @@ fun CheckInHost(
     var secondsLeft by remember { mutableIntStateOf(0) }
     var demoMenuOpen by remember { mutableStateOf(false) }
 
+    val context = LocalContext.current
+    val store = remember { CheckStore(context) }
+    val activeContactNames = remember(step, contactNames) {
+        val storeContacts = store.contacts()
+        if (storeContacts.isNotEmpty()) {
+            storeContacts.map { it.name.substringBefore(" (") }
+        } else if (contactNames.isNotEmpty()) {
+            contactNames
+        } else {
+            emptyList()
+        }
+    }
+
+    fun syncWithStore() {
+        val flowStep = store.checkInStep()
+        val now = System.currentTimeMillis()
+        when (flowStep) {
+            "PROMPT" -> {
+                val elapsed = ((now - store.promptStartMs()) / 1000).toInt()
+                if (elapsed < timings.promptSeconds) {
+                    step = CheckInStep.Prompt
+                } else {
+                    val rem = timings.alarmSeconds - (elapsed - timings.promptSeconds)
+                    if (rem > 0) {
+                        secondsLeft = rem
+                        step = CheckInStep.Alarm
+                    } else {
+                        step = CheckInStep.HelpSent
+                    }
+                }
+            }
+            "ALARM" -> {
+                val elapsed = ((now - store.alarmStartMs()) / 1000).toInt()
+                val rem = timings.alarmSeconds - elapsed
+                if (rem > 0) {
+                    secondsLeft = rem
+                    step = CheckInStep.Alarm
+                } else {
+                    step = CheckInStep.HelpSent
+                }
+            }
+            "HELP_SENT" -> {
+                step = CheckInStep.HelpSent
+            }
+        }
+    }
+
     fun startAlarm() {
+        store.startAlarmFlow()
         secondsLeft = timings.alarmSeconds   // set before showing, so the countdown never flashes 0:00
         step = CheckInStep.Alarm
     }
 
     // A morning or daytime check asked for the prompt (see CheckScheduler).
-    LaunchedEffect(promptPending) {
+    LaunchedEffect(promptPending, Unit) {
+        syncWithStore()
         if (promptPending) {
+            if (store.checkInStep() == "NONE") {
+                store.startPromptFlow()
+            }
             if (step == CheckInStep.None) step = CheckInStep.Prompt
             onPromptShown()
         }
     }
 
-    // Timers: move to the next step when time runs out.
+    // Timers & clock sync: compute step and remaining countdown based on real time.
     LaunchedEffect(step) {
-        when (step) {
-            CheckInStep.Prompt -> {
-                delay(timings.promptSeconds * 1000L)
-                startAlarm()
+        while (true) {
+            syncWithStore()
+            if (step == CheckInStep.Alarm && secondsLeft > 0) {
+                delay(1000)
+            } else if (step == CheckInStep.Prompt) {
+                delay(1000)
+            } else {
+                delay(2000)
             }
-            CheckInStep.Alarm -> {
-                while (secondsLeft > 0) {
-                    delay(1000)
-                    secondsLeft--
-                }
-                onSendAlert(contactNames)
-                step = CheckInStep.HelpSent
-            }
-            else -> Unit
         }
     }
 
     val imOk = {
+        store.clearCheckInFlow()
         onImOk()
         step = CheckInStep.None
     }
@@ -107,13 +157,14 @@ fun CheckInHost(
             CheckInStep.None -> content()
             CheckInStep.Prompt -> CheckInPromptScreen(greeting = greetingForNow(), onImOk = imOk)
             CheckInStep.Alarm -> AlarmScreen(
-                contactName = contactNames.first(),
+                contactName = activeContactNames.firstOrNull() ?: "your contacts",
                 secondsLeft = secondsLeft,
                 onImOk = imOk,
             )
             CheckInStep.HelpSent -> HelpSentScreen(
-                contactNames = contactNames,
+                contactNames = activeContactNames,
                 onCancel = {
+                    store.clearCheckInFlow()
                     onCancelAlert()
                     step = CheckInStep.None
                 },
