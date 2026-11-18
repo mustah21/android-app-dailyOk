@@ -1,23 +1,12 @@
-package com.example.dailyok.platform.sensors
+package com.example.dailyok.domain.service
 
-import android.content.Context
-import android.hardware.Sensor
-import android.hardware.SensorEvent
-import android.hardware.SensorEventListener
-import android.hardware.SensorManager
-import kotlin.math.acos
-import kotlin.math.sqrt
+import com.example.dailyok.domain.model.AccelerometerReading
+import kotlin.math.*
 
 class PickupDetector(
-    context: Context,
     private val onPickup: () -> Unit,
     private val onDebug: ((String) -> Unit)? = null,
-) : SensorEventListener {
-
-    private val sensorManager =
-        context.getSystemService(Context.SENSOR_SERVICE) as SensorManager
-    private val accelerometer: Sensor? =
-        sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER)
+) {
 
     private val gravity = FloatArray(3)          // current orientation (low-pass filtered)
     private var restGravity: FloatArray? = null  // orientation while the phone was last still
@@ -27,17 +16,8 @@ class PickupDetector(
     private var lastMotionNs: Long = 0
     private var armed = false                    // true once the phone has been still for a while
 
-    fun start(): Boolean {
-        val sensor = accelerometer ?: return false
-        reset()
-        return sensorManager.registerListener(this, sensor, SensorManager.SENSOR_DELAY_GAME)
-    }
 
-    fun stop() {
-        sensorManager.unregisterListener(this)
-    }
-
-    private fun reset() {
+    fun reset() {
         haveGravity = false
         restGravity = null
         stillSinceNs = 0L
@@ -46,9 +26,10 @@ class PickupDetector(
         armed = false
     }
 
-    override fun onSensorChanged(event: SensorEvent) {
-        val t = event.timestamp
-        val v = event.values
+    fun onReading(r: AccelerometerReading) {
+        val t = r.timestampNs
+        val v = floatArrayOf(r.x, r.y, r.z)
+
 
         if (!haveGravity) {
             for (i in 0..2) gravity[i] = v[i]
@@ -91,9 +72,8 @@ class PickupDetector(
                 onPickup()
             }
         }
-    }
 
-    override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) = Unit
+    }
 
     private fun angleDeg(a: FloatArray, b: FloatArray): Float {
         val dot = a[0] * b[0] + a[1] * b[1] + a[2] * b[2]
@@ -103,7 +83,6 @@ class PickupDetector(
         val cos = (dot / (na * nb)).coerceIn(-1f, 1f)
         return Math.toDegrees(acos(cos).toDouble()).toFloat()
     }
-
     private companion object {
         const val MS: Long = 1_000_000               // nanoseconds per millisecond
         const val ALPHA = 0.8f                   // gravity low-pass filter
@@ -114,16 +93,5 @@ class PickupDetector(
         const val MIN_MOTION_NS = 300 * MS       // a bump is shorter than this
         const val MIN_TILT_DEG = 20f             // orientation change needed for a pickup
     }
+
 }
-
-
-
-// !!!!!!?! implementation of this class, I think it should be fine
-
-//val detector = PickupDetector(
-//    context,
-//    onPickup = { Log.d("Pickup", "picked up") },
-//    onDebug = { Log.d("PickupDebug", it) },
-//)
-//if (!detector.start()) { /* no accelerometer */ }
-// later: detector.stop()

@@ -28,7 +28,7 @@ class CheckStore(private val context: Context) {
         return ms.toLocalDateTimeOrNull()
     }
 
-    fun recordActivity(atMs: Long = System.currentTimeMillis()) {
+    fun recordActivity(atMs: LocalDateTime? = System.currentTimeMillis()) {
         if (atMs > prefs.getLong(KEY_LAST_ACTIVITY, 0L)) {
             prefs.edit().putLong(KEY_LAST_ACTIVITY, atMs).apply()
         }
