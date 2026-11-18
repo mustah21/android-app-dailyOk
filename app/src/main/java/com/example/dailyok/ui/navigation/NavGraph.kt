@@ -51,7 +51,7 @@ fun AppNavGraph(app: DailyOkApp) {
         factory = HomeViewModel.factory(context, app.container)
     )
     val helpViewModel: HelpViewModel = viewModel()
-    val settingsViewModel: SettingsViewModel = viewModel()
+    val settingsViewModel: SettingsViewModel = viewModel(factory = SettingsViewModel.factory(context))
 
     NavHost(
         navController = nav,

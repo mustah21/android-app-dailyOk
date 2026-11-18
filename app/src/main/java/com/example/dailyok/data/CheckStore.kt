@@ -2,10 +2,14 @@ package com.example.dailyok.data
 
 import android.content.Context
 import com.example.dailyok.domain.CheckConfig
+import com.example.dailyok.ui.screens.settings.Contact
+import org.json.JSONArray
+import org.json.JSONObject
 import java.time.Instant
 import java.time.LocalDateTime
 import java.time.LocalTime
 import java.time.ZoneId
+import java.util.UUID
 
 /**
  * Everything the daily checks need to remember, stored only on the phone.
@@ -63,6 +67,86 @@ class CheckStore(private val context: Context) {
 
     fun setInactivityHours(hours: Int) = saveConfig(config().copy(inactivityHours = hours))
 
+    // ---- Contacts storage ----
+
+    fun contacts(): List<Contact> {
+        if (!prefs.contains(KEY_CONTACTS)) return defaultContacts()
+        val jsonString = prefs.getString(KEY_CONTACTS, null) ?: return emptyList()
+        return try {
+            val array = JSONArray(jsonString)
+            val list = mutableListOf<Contact>()
+            for (i in 0 until array.length()) {
+                val obj = array.getJSONObject(i)
+                list.add(
+                    Contact(
+                        id = obj.optString("id", UUID.randomUUID().toString()),
+                        name = obj.getString("name"),
+                        phone = obj.getString("phone"),
+                    )
+                )
+            }
+            list
+        } catch (_: Exception) {
+            emptyList()
+        }
+    }
+
+    fun saveContacts(contacts: List<Contact>) {
+        val array = JSONArray()
+        for (c in contacts) {
+            val obj = JSONObject()
+            obj.put("id", c.id)
+            obj.put("name", c.name)
+            obj.put("phone", c.phone)
+            array.put(obj)
+        }
+        prefs.edit().putString(KEY_CONTACTS, array.toString()).apply()
+    }
+
+    private fun defaultContacts() = listOf(
+        Contact(id = "1", name = "Anna (daughter)", phone = "+358 40 123 4567"),
+        Contact(id = "2", name = "Matti (neighbour)", phone = "+358 50 765 4321"),
+    )
+
+    // ---- Active check-in flow state ----
+
+    fun checkInStep(): String = prefs.getString(KEY_FLOW_STEP, "NONE") ?: "NONE"
+
+    fun promptStartMs(): Long = prefs.getLong(KEY_PROMPT_START_MS, 0L)
+
+    fun alarmStartMs(): Long = prefs.getLong(KEY_ALARM_START_MS, 0L)
+
+    fun startPromptFlow(atMs: Long = System.currentTimeMillis()) {
+        prefs.edit()
+            .putString(KEY_FLOW_STEP, "PROMPT")
+            .putLong(KEY_PROMPT_START_MS, atMs)
+            .putLong(KEY_LAST_PROMPT, atMs)
+            .apply()
+    }
+
+    fun startAlarmFlow(atMs: Long = System.currentTimeMillis()) {
+        prefs.edit()
+            .putString(KEY_FLOW_STEP, "ALARM")
+            .putLong(KEY_ALARM_START_MS, atMs)
+            .apply()
+    }
+
+    fun startHelpSentFlow(atMs: Long = System.currentTimeMillis()) {
+        prefs.edit()
+            .putString(KEY_FLOW_STEP, "HELP_SENT")
+            .putLong(KEY_HELP_SENT_MS, atMs)
+            .apply()
+    }
+
+    fun clearCheckInFlow() {
+        prefs.edit()
+            .putString(KEY_FLOW_STEP, "NONE")
+            .remove(KEY_PROMPT_START_MS)
+            .remove(KEY_ALARM_START_MS)
+            .remove(KEY_HELP_SENT_MS)
+            .apply()
+    }
+
     // ---- Demo helpers (Settings > Demo) ----
 
     /** Set the last activity to any time, even earlier than the stored one. */
@@ -98,5 +182,10 @@ class CheckStore(private val context: Context) {
         private const val KEY_MORNING_MIN = "check_morning_minute"
         private const val KEY_BED_MIN = "check_bed_minute"
         private const val KEY_INACTIVITY_HOURS = "check_inactivity_hours"
+        private const val KEY_CONTACTS = "contacts_list_json"
+        private const val KEY_FLOW_STEP = "checkin_flow_step"
+        private const val KEY_PROMPT_START_MS = "checkin_prompt_start_ms"
+        private const val KEY_ALARM_START_MS = "checkin_alarm_start_ms"
+        private const val KEY_HELP_SENT_MS = "checkin_help_sent_ms"
     }
 }

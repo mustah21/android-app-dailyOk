@@ -1,5 +1,6 @@
 package com.example.dailyok.ui.screens.settings
 
+import android.widget.Toast
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
@@ -33,6 +34,8 @@ import com.example.dailyok.data.DemoConfig
 import com.example.dailyok.data.DemoSettings
 import com.example.dailyok.domain.CheckConfig
 import com.example.dailyok.domain.CheckEngine
+import com.example.dailyok.domain.CheckReason
+import com.example.dailyok.platform.check.CheckNotifier
 import com.example.dailyok.platform.check.CheckScheduler
 import kotlinx.coroutines.delay
 import java.time.LocalDateTime
@@ -119,6 +122,8 @@ fun DemoSection(modifier: Modifier = Modifier) {
                             selected = demo.inactivitySeconds == seconds,
                             onClick = {
                                 DemoSettings.update(context) { it.copy(inactivitySeconds = seconds) }
+                                store.clearPrompt()
+                                store.recordActivity()
                                 afterChange()
                             },
                             label = { Text(DemoConfig.inactivityLabel(seconds)) },
@@ -136,6 +141,18 @@ fun DemoSection(modifier: Modifier = Modifier) {
             HorizontalDivider()
             Text("Try a check now", style = MaterialTheme.typography.titleMedium)
 
+            DemoButton("Start 30s check timer (for testing)") {
+                DemoSettings.update(context) { it.copy(inactivitySeconds = 30) }
+                store.clearPrompt()
+                store.recordActivity()
+                CheckScheduler.reschedule(context)
+                Toast.makeText(
+                    context,
+                    "30s timer started! Close app/lock screen now & leave phone still on table.",
+                    Toast.LENGTH_LONG,
+                ).show()
+                refresh++
+            }
             DemoButton("Simulate a missed morning") {
                 // Morning check 1 minute ago, woke up 30 minutes ago, last seen before that.
                 val now = LocalTime.now()
@@ -163,6 +180,13 @@ fun DemoSection(modifier: Modifier = Modifier) {
             }
             DemoButton("Run the check now") {
                 CheckScheduler.runCheck(context)
+                refresh++
+            }
+            DemoButton("Test notification now") {
+                CheckNotifier.showPrompt(
+                    context,
+                    CheckReason.DAYTIME_INACTIVITY,
+                )
                 refresh++
             }
             DemoButton("Reset check times to normal") {

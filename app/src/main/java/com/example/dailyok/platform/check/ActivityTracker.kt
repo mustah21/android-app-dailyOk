@@ -15,12 +15,10 @@ import com.example.dailyok.data.CheckStore
  *  - the phone is unlocked (ACTION_USER_PRESENT)
  *  - the phone is taken off the charger (ACTION_POWER_DISCONNECTED)
  *  - the app is opened, or "I'm OK" is pressed (called from MainActivity / CheckInHost)
- *  - a pickup, once PickupDetector is wired in (call [record] from its onPickup)
+ *  - a phone pickup (detected by PickupDetector inside CheckService)
  *
- * Note: the system broadcasts are registered at runtime, so they are only heard while the app's
- * process is alive. The "Resume after restart" card (foreground service) will keep it alive
- * all the time; until then, the morning and daytime checks still fire on time, but they can
- * only see activity from while the app was running.
+ * Note: [CheckService] (foreground service) keeps the process alive continuously so runtime broadcasts
+ * and sensor events are tracked at all times.
  */
 object ActivityTracker {
 
@@ -29,7 +27,10 @@ object ActivityTracker {
 
     fun record(context: Context, source: String) {
         Log.d(TAG, "Activity: $source")
-        CheckStore(context).recordActivity()
+        val store = CheckStore(context)
+        store.recordActivity()
+        store.clearCheckInFlow()
+        CheckScheduler.cancel(context)
         CheckNotifier.cancelPrompt(context)
         CheckScheduler.reschedule(context)
     }

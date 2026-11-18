@@ -15,8 +15,10 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.core.content.ContextCompat
+import com.example.dailyok.data.CheckStore
 import com.example.dailyok.data.DemoSettings
 import com.example.dailyok.platform.check.ActivityTracker
 import com.example.dailyok.platform.check.CheckNotifier
@@ -40,19 +42,11 @@ class MainActivity : ComponentActivity() {
         setContent {
             val promptPending by CheckScheduler.promptPending.collectAsState()
             val demo by DemoSettings.flow(this).collectAsState()   // Settings > Demo
-//            DailyOkTheme {
-//                Surface(
-//                    modifier = Modifier.fillMaxSize(),
-//                    color = MaterialTheme.colorScheme.background
-//                ) {
-//                    AppNavGraph(app)
-//                }
-//            }
 
 //            TEST> this is for testing purpose, we remove when app is final
             DailyOkTheme {
                 CheckInHost(
-                    contactNames = listOf("Anna", "Jussi"),
+                    contactNames = emptyList(),
                     timings = demo.timings,
                     showDemoTrigger = demo.enabled,
                     promptPending = promptPending,

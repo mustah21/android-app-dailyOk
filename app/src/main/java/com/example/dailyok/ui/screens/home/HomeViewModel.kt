@@ -3,6 +3,7 @@ package com.example.dailyok.ui.screens.home
 import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
+import com.example.dailyok.platform.check.CheckScheduler
 import androidx.lifecycle.viewModelScope
 import com.example.dailyok.AppContainer
 import com.example.dailyok.domain.interfaces.ActivityRepository
@@ -26,7 +27,7 @@ class HomeViewModel(
 ) : ViewModel() {
 
     private val preferences = HomePreferences(context)
-
+    private val appContext = context.applicationContext
     private val formatter = DateTimeFormatter.ofPattern("EEEE h:mm a")
         .withZone(ZoneId.systemDefault())
 
@@ -60,12 +61,12 @@ class HomeViewModel(
 
         val now = System.currentTimeMillis()
         preferences.saveLastOkClickTime(now)
-
         _state.update { it.copy(lastOkClickTime = now) }
     }
 
     fun onPauseChanged(paused: Boolean) {
         preferences.savePaused(paused)
+        CheckScheduler.reschedule(appContext)
         _state.update { it.copy(isPaused = paused) }
     }
 

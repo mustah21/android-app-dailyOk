@@ -89,15 +89,16 @@ object CheckEngine {
         if (config.paused) return CheckDecision.AllWell
         if (alreadyPrompted(lastActivity, lastPrompt)) return CheckDecision.AllWell
 
+        val isDemo = config.demoInactivitySeconds != null
         val today = now.toLocalDate()
         val wake = today.atTime(config.wakeTime)
         val morningCheck = today.atTime(config.morningCheckTime)
         val bed = today.atTime(config.bedTime)
 
-        // Sleep hours: nothing to check.
-        if (now < wake || now >= bed) return CheckDecision.AllWell
+        // Sleep hours: nothing to check (unless running in demo mode with custom seconds).
+        if (!isDemo && (now < wake || now >= bed)) return CheckDecision.AllWell
 
-        val activeSinceWaking = lastActivity != null && lastActivity >= wake
+        val activeSinceWaking = lastActivity != null && (isDemo || lastActivity >= wake)
 
         // Rule 2: morning check.
         if (!activeSinceWaking) {
@@ -110,7 +111,7 @@ object CheckEngine {
 
         // Rule 3: daytime inactivity (lastActivity is today, after waking).
         val deadline = lastActivity!!.plus(config.inactivity)
-        return if (now >= deadline && deadline < bed) {
+        return if (now >= deadline && (isDemo || deadline < bed)) {
             CheckDecision.Prompt(CheckReason.DAYTIME_INACTIVITY)
         } else {
             CheckDecision.AllWell
@@ -133,21 +134,22 @@ object CheckEngine {
             return minOf(now.plusHours(1), nextMorningCheck(now, config))
         }
 
+        val isDemo = config.demoInactivitySeconds != null
         val today = now.toLocalDate()
         val wake = today.atTime(config.wakeTime)
         val morningCheck = today.atTime(config.morningCheckTime)
         val bed = today.atTime(config.bedTime)
 
-        if (now < wake || now >= bed) return nextMorningCheck(now, config)
+        if (!isDemo && (now < wake || now >= bed)) return nextMorningCheck(now, config)
 
-        val activeSinceWaking = lastActivity != null && lastActivity >= wake
+        val activeSinceWaking = lastActivity != null && (isDemo || lastActivity >= wake)
         if (!activeSinceWaking) {
             return if (now < morningCheck) morningCheck else now // overdue: check right away
         }
 
         val deadline = lastActivity!!.plus(config.inactivity)
         return when {
-            deadline >= bed -> nextMorningCheck(now, config) // would fall into sleep hours
+            !isDemo && deadline >= bed -> nextMorningCheck(now, config) // would fall into sleep hours
             deadline <= now -> now
             else -> deadline
         }

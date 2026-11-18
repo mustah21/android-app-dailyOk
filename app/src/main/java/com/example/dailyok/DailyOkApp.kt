@@ -4,6 +4,7 @@ import android.app.Application
 import androidx.work.Configuration
 import com.example.dailyok.platform.check.ActivityTracker
 import com.example.dailyok.platform.check.CheckScheduler
+import com.example.dailyok.platform.check.CheckService
 import com.example.dailyok.platform.worker.ActivityScheduler
 import com.example.dailyok.platform.worker.AppWorkerFactory
 import com.example.dailyok.ui.screens.welcome.ProfileRepository
@@ -29,6 +30,7 @@ class DailyOkApp : Application(), Configuration.Provider {
         // Morning and daytime checks: listen for unlocks/unplugging and set the next check alarm.
         ActivityTracker.registerSystemSignals(this)
         CheckScheduler.reschedule(this)
+        CheckService.start(this)
         ActivityScheduler.schedule(this)   // 12-hour usage log sync
     }
 }
