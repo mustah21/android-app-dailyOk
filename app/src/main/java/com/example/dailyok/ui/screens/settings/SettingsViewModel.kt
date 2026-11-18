@@ -1,11 +1,14 @@
 package com.example.dailyok.ui.screens.settings
 
-
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.viewModelScope
+import com.example.dailyok.data.UserManager
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
 import java.time.LocalDate
 import java.time.LocalTime
 import java.util.UUID
@@ -43,15 +46,28 @@ data class SettingsUiState(
     val activity: List<ActivityDay> = emptyList(),
 )
 
-class SettingsViewModel : ViewModel() {
+class SettingsViewModel(
+    private val userManager: UserManager? = null
+) : ViewModel() {
 
     private val _state = MutableStateFlow(
         SettingsUiState(
-            contacts = sampleContacts(),
+            //real contacts added
+            contacts = if (userManager == null) sampleContacts() else emptyList(),
             activity = sampleActivity(),
         )
     )
     val state: StateFlow<SettingsUiState> = _state.asStateFlow()
+
+    init {
+        userManager?.let { manager ->
+            viewModelScope.launch {
+                manager.contactsFlow.collect { contactList ->
+                    _state.update { it.copy(contacts = contactList) }
+                }
+            }
+        }
+    }
 
     // Inactivity period
     fun onInactivityHoursChange(hours: Int) =
@@ -79,29 +95,55 @@ class SettingsViewModel : ViewModel() {
     fun onDismissDraft() =
         _state.update { it.copy(draft = null) }
 
-    fun onSaveContact() = _state.update { s ->
-        val d = s.draft ?: return@update s
+    fun onSaveContact() {
+        val s = _state.value
+        val d = s.draft ?: return
         val nameBad = d.name.isBlank()
-        val phoneBad = d.phone.count(Char::isDigit) < 6
+        val phoneBad = !UserManager.PhoneValidator.isValid(d.phone)
         if (nameBad || phoneBad) {
-            return@update s.copy(draft = d.copy(nameError = nameBad, phoneError = phoneBad))
+            _state.update { it.copy(draft = d.copy(nameError = nameBad, phoneError = phoneBad)) }
+            return
         }
-        val saved = Contact(
-            id = d.id ?: UUID.randomUUID().toString(),
-            name = d.name.trim(),
-            phone = d.phone.trim(),
-        )
-        val list = if (d.id == null) s.contacts + saved
-        else s.contacts.map { if (it.id == saved.id) saved else it }
-        s.copy(contacts = list, draft = null)
+
+        val trimmedName = d.name.trim()
+        val trimmedPhone = d.phone.trim()
+
+        if (userManager != null) {
+            viewModelScope.launch {
+                userManager.saveContact(id = d.id, name = trimmedName, phone = trimmedPhone)
+            }
+            _state.update { it.copy(draft = null) }
+        } else {
+            val saved = Contact(
+                id = d.id ?: UUID.randomUUID().toString(),
+                name = trimmedName,
+                phone = trimmedPhone,
+            )
+            val list = if (d.id == null) s.contacts + saved
+            else s.contacts.map { if (it.id == saved.id) saved else it }
+            _state.update { it.copy(contacts = list, draft = null) }
+        }
     }
 
-    fun onDeleteContact(id: String) =
-        _state.update { s -> s.copy(contacts = s.contacts.filterNot { it.id == id }) }
+    fun onDeleteContact(id: String) {
+        if (userManager != null) {
+            viewModelScope.launch {
+                userManager.removeContact(id)
+            }
+        } else {
+            _state.update { s -> s.copy(contacts = s.contacts.filterNot { it.id == id }) }
+        }
+    }
 
     companion object {
         const val MIN_HOURS = 2
         const val MAX_HOURS = 6
+
+        fun factory(userManager: UserManager) = object : ViewModelProvider.Factory {
+            @Suppress("UNCHECKED_CAST")
+            override fun <T : ViewModel> create(modelClass: Class<T>): T =
+                SettingsViewModel(userManager) as T
+        }
     }
 }
 

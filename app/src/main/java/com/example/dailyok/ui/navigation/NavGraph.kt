@@ -41,7 +41,7 @@ object Routes {
 fun AppNavGraph(app: DailyOkApp) {
 
     val onboardingDone by produceState<Boolean?>(initialValue = null) {
-        value = app.settings.onboardingDone.first()
+        value = app.userManager.onboardingDoneFlow.first()
     }
     val done = onboardingDone ?: return
     val nav = rememberNavController()
@@ -49,7 +49,7 @@ fun AppNavGraph(app: DailyOkApp) {
 
     val homeViewModel: HomeViewModel = viewModel(factory = HomeViewModel.factory(context))
     val helpViewModel: HelpViewModel = viewModel()
-    val settingsViewModel: SettingsViewModel = viewModel()
+    val settingsViewModel: SettingsViewModel = viewModel(factory = SettingsViewModel.factory(app.userManager))
 
     NavHost(
         navController = nav,
@@ -69,7 +69,7 @@ fun AppNavGraph(app: DailyOkApp) {
                 onFinished = {
                     scope.launch {
                         Log.d("Onboarding", "saving flag")
-                        app.settings.setOnboardingDone(true)
+                        app.userManager.setOnboardingDone(true)
                         Log.d("Onboarding", "saved")
                         nav.navigate(Routes.HOME) {
                             popUpTo(Routes.WELCOME) { inclusive = true }

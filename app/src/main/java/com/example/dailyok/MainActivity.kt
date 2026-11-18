@@ -50,9 +50,12 @@ class MainActivity : ComponentActivity() {
 //            }
 
 //            TEST> this is for testing purpose, we remove when app is final
+            val savedContacts by app.userManager.contactsFlow.collectAsState(initial = emptyList())
+            val contactNames = if (savedContacts.isEmpty()) listOf("Contact 1", "Contact 2") else savedContacts.map { it.name }
+
             DailyOkTheme {
                 CheckInHost(
-                    contactNames = listOf("Anna", "Jussi"),
+                    contactNames = contactNames,
                     timings = demo.timings,
                     showDemoTrigger = demo.enabled,
                     promptPending = promptPending,
