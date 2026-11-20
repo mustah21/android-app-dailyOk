@@ -10,6 +10,7 @@ import java.time.LocalDateTime
 import java.time.LocalTime
 import java.time.ZoneId
 import java.util.UUID
+import androidx.core.content.edit
 
 /**
  * Everything the daily checks need to remember, stored only on the phone.
@@ -28,9 +29,9 @@ class CheckStore(private val context: Context) {
         return ms.toLocalDateTimeOrNull()
     }
 
-    fun recordActivity(atMs: LocalDateTime? = System.currentTimeMillis()) {
+    fun recordActivity(atMs: Long = System.currentTimeMillis()) {
         if (atMs > prefs.getLong(KEY_LAST_ACTIVITY, 0L)) {
-            prefs.edit().putLong(KEY_LAST_ACTIVITY, atMs).apply()
+            prefs.edit { putLong(KEY_LAST_ACTIVITY, atMs) }
         }
     }
 
@@ -38,7 +39,7 @@ class CheckStore(private val context: Context) {
     fun lastPrompt(): LocalDateTime? = prefs.getLong(KEY_LAST_PROMPT, 0L).toLocalDateTimeOrNull()
 
     fun recordPrompt(atMs: Long = System.currentTimeMillis()) {
-        prefs.edit().putLong(KEY_LAST_PROMPT, atMs).apply()
+        prefs.edit { putLong(KEY_LAST_PROMPT, atMs) }
     }
 
     fun config(): CheckConfig {
@@ -56,13 +57,13 @@ class CheckStore(private val context: Context) {
 
     /** Call from the Settings screen. Throws if the times are not wake < morning check < bed. */
     fun saveConfig(config: CheckConfig) {
-        prefs.edit()
-            .putInt(KEY_WAKE_MIN, config.wakeTime.toMinuteOfDay())
-            .putInt(KEY_MORNING_MIN, config.morningCheckTime.toMinuteOfDay())
-            .putInt(KEY_BED_MIN, config.bedTime.toMinuteOfDay())
-            .putInt(KEY_INACTIVITY_HOURS, config.inactivityHours)
-            .putBoolean(KEY_PAUSED, config.paused)
-            .apply()
+        prefs.edit {
+            putInt(KEY_WAKE_MIN, config.wakeTime.toMinuteOfDay())
+                .putInt(KEY_MORNING_MIN, config.morningCheckTime.toMinuteOfDay())
+                .putInt(KEY_BED_MIN, config.bedTime.toMinuteOfDay())
+                .putInt(KEY_INACTIVITY_HOURS, config.inactivityHours)
+                .putBoolean(KEY_PAUSED, config.paused)
+        }
     }
 
     fun setInactivityHours(hours: Int) = saveConfig(config().copy(inactivityHours = hours))
@@ -100,7 +101,7 @@ class CheckStore(private val context: Context) {
             obj.put("phone", c.phone)
             array.put(obj)
         }
-        prefs.edit().putString(KEY_CONTACTS, array.toString()).apply()
+        prefs.edit { putString(KEY_CONTACTS, array.toString()) }
     }
 
     private fun defaultContacts() = listOf(
@@ -117,18 +118,18 @@ class CheckStore(private val context: Context) {
     fun alarmStartMs(): Long = prefs.getLong(KEY_ALARM_START_MS, 0L)
 
     fun startPromptFlow(atMs: Long = System.currentTimeMillis()) {
-        prefs.edit()
-            .putString(KEY_FLOW_STEP, "PROMPT")
-            .putLong(KEY_PROMPT_START_MS, atMs)
-            .putLong(KEY_LAST_PROMPT, atMs)
-            .apply()
+        prefs.edit {
+            putString(KEY_FLOW_STEP, "PROMPT")
+                .putLong(KEY_PROMPT_START_MS, atMs)
+                .putLong(KEY_LAST_PROMPT, atMs)
+        }
     }
 
     fun startAlarmFlow(atMs: Long = System.currentTimeMillis()) {
-        prefs.edit()
-            .putString(KEY_FLOW_STEP, "ALARM")
-            .putLong(KEY_ALARM_START_MS, atMs)
-            .apply()
+        prefs.edit {
+            putString(KEY_FLOW_STEP, "ALARM")
+                .putLong(KEY_ALARM_START_MS, atMs)
+        }
     }
 
     fun startHelpSentFlow(atMs: Long = System.currentTimeMillis()) {
@@ -139,24 +140,24 @@ class CheckStore(private val context: Context) {
     }
 
     fun clearCheckInFlow() {
-        prefs.edit()
-            .putString(KEY_FLOW_STEP, "NONE")
-            .remove(KEY_PROMPT_START_MS)
-            .remove(KEY_ALARM_START_MS)
-            .remove(KEY_HELP_SENT_MS)
-            .apply()
+        prefs.edit {
+            putString(KEY_FLOW_STEP, "NONE")
+                .remove(KEY_PROMPT_START_MS)
+                .remove(KEY_ALARM_START_MS)
+                .remove(KEY_HELP_SENT_MS)
+        }
     }
 
     // ---- Demo helpers (Settings > Demo) ----
 
     /** Set the last activity to any time, even earlier than the stored one. */
     fun setLastActivityForDemo(atMs: Long) {
-        prefs.edit().putLong(KEY_LAST_ACTIVITY, atMs).putLong(KEY_HOME_OK_CLICK, 0L).apply()
+        prefs.edit { putLong(KEY_LAST_ACTIVITY, atMs).putLong(KEY_HOME_OK_CLICK, 0L) }
     }
 
     /** Forget the last prompt, so the next check can prompt again. */
     fun clearPrompt() {
-        prefs.edit().remove(KEY_LAST_PROMPT).apply()
+        prefs.edit { remove(KEY_LAST_PROMPT) }
     }
 
     private fun android.content.SharedPreferences.getTime(key: String, default: LocalTime): LocalTime {

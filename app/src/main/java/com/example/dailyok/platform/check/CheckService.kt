@@ -14,7 +14,15 @@ import androidx.core.app.NotificationCompat
 import androidx.core.content.ContextCompat
 import com.example.dailyok.MainActivity
 import com.example.dailyok.R
-import com.example.dailyok.platform.sensors.PickupDetector
+import com.example.dailyok.domain.interfaces.AccelerometerSource
+import com.example.dailyok.domain.service.PickupDetector
+import com.example.dailyok.platform.sensors.AndroidAccelerometerSource
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.onEach
 
 /**
  * Foreground service that ensures DailyOK stays active in the background.
@@ -26,6 +34,9 @@ import com.example.dailyok.platform.sensors.PickupDetector
 class CheckService : Service() {
 
     private var pickupDetector: PickupDetector? = null
+    private var accelerometer: AccelerometerSource? = null
+    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
+
 
     override fun onCreate() {
         super.onCreate()
@@ -36,16 +47,23 @@ class CheckService : Service() {
         ActivityTracker.registerSystemSignals(applicationContext)
         CheckScheduler.reschedule(applicationContext)
 
-        pickupDetector = PickupDetector(
-            context = applicationContext,
+        val detector = PickupDetector(
             onPickup = { ActivityTracker.record(applicationContext, "phone picked up") },
             onDebug = { Log.d("PickupDebug", it) },
-        ).apply {
-            if (!start()) {
-                Log.w(TAG, "PickupDetector failed to start (no accelerometer sensor)")
-            }
+        )
+
+        val source = AndroidAccelerometerSource(applicationContext)
+
+        source.readings()
+            .onEach { detector.onReading(it) }
+            .launchIn(scope)
+
+        if (!source.start()) Log.w(TAG, "No accelerometer sensor")
+
+        pickupDetector = detector
+        accelerometer = source
         }
-    }
+
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         Log.d(TAG, "Starting CheckService")
@@ -56,9 +74,10 @@ class CheckService : Service() {
 
     override fun onDestroy() {
         super.onDestroy()
-        Log.d(TAG, "Destroying CheckService")
-        pickupDetector?.stop()
+        accelerometer?.stop()
+        accelerometer = null
         pickupDetector = null
+        scope.cancel()
     }
 
     override fun onBind(intent: Intent?): IBinder? = null

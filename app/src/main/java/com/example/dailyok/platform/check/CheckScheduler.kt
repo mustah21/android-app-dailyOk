@@ -17,6 +17,8 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
+import java.time.Instant
+import java.time.temporal.ChronoUnit
 
 /**
  * Runs the morning check and the daytime inactivity check.
@@ -111,21 +113,18 @@ object CheckScheduler {
             if (!source.hasPermission()) return
 
             val zone = ZoneId.systemDefault()
-            val known = store.lastActivity()
-            val from = known ?: now.minusDays(1)
-            val latest = source.lastActivityBetween(
-                from.atZone(zone).toInstant(),
-                now.atZone(zone).toInstant(),
-            ) ?: return
+            val nowInstant = now.atZone(zone).toInstant()
 
-            val latestLocal = LocalDateTime.ofInstant(latest, zone)
-            if (known == null || latestLocal.isAfter(known)) {
-                store.recordActivity(latestLocal)
-                Log.d(TAG, "Recorded phone activity at $latestLocal")
-            }
+            // lastActivity() returns LocalDateTime? -> convert, don't cast
+            val known: Instant? = store.lastActivity()?.atZone(zone)?.toInstant()
+            val from = known ?: nowInstant.minus(1, ChronoUnit.DAYS)
+
+            val latest = source.lastActivityBetween(from, nowInstant) ?: return
+
+            store.recordActivity(latest.toEpochMilli())
+            Log.d(TAG, "Recorded phone activity at ${LocalDateTime.ofInstant(latest, zone)}")
         }.onFailure { Log.w(TAG, "Could not read phone activity", it) }
     }
-
 
     fun cancel(context: Context) {
         val am = context.getSystemService(AlarmManager::class.java) ?: return
