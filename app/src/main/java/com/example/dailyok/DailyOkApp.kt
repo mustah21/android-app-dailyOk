@@ -16,7 +16,6 @@ class DailyOkApp : Application() {
         DataStoreProfileRepository(userManager)
     }
 
-    // Settings accessor delegating directly to DataStore
     val settings: AppSettings by lazy { AppSettings(userManager) }
 
     override fun onCreate() {

@@ -3,7 +3,6 @@ package com.example.dailyok.ui.navigation
 import android.os.Build
 import android.util.Log
 import androidx.annotation.RequiresApi
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.produceState
@@ -48,7 +47,10 @@ fun AppNavGraph(app: DailyOkApp) {
     val context = LocalContext.current
 
     val homeViewModel: HomeViewModel = viewModel(factory = HomeViewModel.factory(context))
-    val helpViewModel: HelpViewModel = viewModel()
+
+    val helpViewModel: HelpViewModel = viewModel(
+        factory = HelpViewModel.factory(app.userManager, context)
+    )
     val settingsViewModel: SettingsViewModel = viewModel(factory = SettingsViewModel.factory(app.userManager))
 
     NavHost(
@@ -88,10 +90,10 @@ fun AppNavGraph(app: DailyOkApp) {
         composable(Routes.HOME) {
             HomeRoute(
                 viewModel = homeViewModel,
-                onNeedHelp = { nav.navigate(Routes.HELP)},
+                onNeedHelp = { nav.navigate(Routes.HELP) },
                 onMedsClick = { nav.navigate(Routes.MEDS) },
-                onSettingsClick = {nav.navigate(Routes.SETTINGS)}
-                )
+                onSettingsClick = { nav.navigate(Routes.SETTINGS) }
+            )
         }
 
 
@@ -101,10 +103,14 @@ fun AppNavGraph(app: DailyOkApp) {
 
 
         composable(Routes.HELP) {
-           HelpRoute(
-               viewModel = helpViewModel,
-           )
+            HelpRoute(
+                viewModel = helpViewModel,
+                onCancel = {
+                    nav.popBackStack(Routes.HOME, inclusive = false)
+                },
+            )
         }
+
         composable(Routes.MEDS) {
             HelpRoute(
                 viewModel = helpViewModel,

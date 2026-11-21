@@ -10,24 +10,24 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.RequiresApi
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.ui.Modifier
 import androidx.core.content.ContextCompat
-import com.example.dailyok.data.DemoSettings
+import com.example.dailyok.data.CheckStore
 import com.example.dailyok.platform.check.ActivityTracker
 import com.example.dailyok.platform.check.CheckNotifier
 import com.example.dailyok.platform.check.CheckScheduler
+import com.example.dailyok.platform.sms.SmsAlertSender
 import com.example.dailyok.ui.checkin.CheckInHost
 import com.example.dailyok.ui.navigation.AppNavGraph
 import com.example.dailyok.ui.theme.DailyOkTheme
+import com.example.dailyok.data.DemoSettings
 
 class MainActivity : ComponentActivity() {
-
     private val notificationPermission =
+        registerForActivityResult(ActivityResultContracts.RequestPermission()) { }
+
+    private val smsPermission =
         registerForActivityResult(ActivityResultContracts.RequestPermission()) { }
 
     @RequiresApi(Build.VERSION_CODES.O)
@@ -37,21 +37,14 @@ class MainActivity : ComponentActivity() {
         val app = application as DailyOkApp
         handleCheckInIntent(intent)
         askForNotificationPermission()
+        askForSmsPermission()
         setContent {
             val promptPending by CheckScheduler.promptPending.collectAsState()
-            val demo by DemoSettings.flow(this).collectAsState()   // Settings > Demo
-//            DailyOkTheme {
-//                Surface(
-//                    modifier = Modifier.fillMaxSize(),
-//                    color = MaterialTheme.colorScheme.background
-//                ) {
-//                    AppNavGraph(app)
-//                }
-//            }
+            val demo by DemoSettings.flow(this).collectAsState()
 
-//            TEST> this is for testing purpose, we remove when app is final
             val savedContacts by app.userManager.contactsFlow.collectAsState(initial = emptyList())
             val contactNames = if (savedContacts.isEmpty()) listOf("Contact 1", "Contact 2") else savedContacts.map { it.name }
+            val contactPhones = savedContacts.map { it.phone }
 
             DailyOkTheme {
                 CheckInHost(
@@ -64,8 +57,26 @@ class MainActivity : ComponentActivity() {
                         ActivityTracker.record(this, "I'm OK pressed")
                         showOverLockScreen(false)
                     },
+                    onSendAlert = { _ ->
+                        val lastActivityMs = CheckStore(this).lastActivity()
+                            ?.atZone(java.time.ZoneId.systemDefault())
+                            ?.toInstant()?.toEpochMilli() ?: 0L
+                        val lastActivityText = SmsAlertSender.formatActivityTime(lastActivityMs)
+                        SmsAlertSender.sendNoAnswerAlert(
+                            context = this,
+                            contacts = contactPhones,
+                            lastActivity = lastActivityText,
+                            lastLocation = null, // location not yet implemented
+                        )
+                    },
+                    onCancelAlert = {
+                        SmsAlertSender.sendCancellation(
+                            context = this,
+                            contacts = contactPhones,
+                        )
+                    },
                 ) {
-                    AppNavGraph(app)   // your normal screen
+                    AppNavGraph(app)
                 }
             }
         }
@@ -76,7 +87,6 @@ class MainActivity : ComponentActivity() {
         handleCheckInIntent(intent)
     }
 
-    /** Opened from the "Are you OK?" notification: show the prompt, even over the lock screen. */
     private fun handleCheckInIntent(intent: Intent?) {
         if (intent?.getBooleanExtra(CheckNotifier.EXTRA_START_CHECKIN, false) != true) return
         intent.removeExtra(CheckNotifier.EXTRA_START_CHECKIN)
@@ -97,6 +107,15 @@ class MainActivity : ComponentActivity() {
             != PackageManager.PERMISSION_GRANTED
         ) {
             notificationPermission.launch(Manifest.permission.POST_NOTIFICATIONS)
+        }
+    }
+
+ 
+    private fun askForSmsPermission() {
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.SEND_SMS)
+            != PackageManager.PERMISSION_GRANTED
+        ) {
+            smsPermission.launch(Manifest.permission.SEND_SMS)
         }
     }
 }
