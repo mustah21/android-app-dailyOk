@@ -1,17 +1,14 @@
 package com.example.dailyok.platform.sms
 
+import android.Manifest
 import android.content.Context
+import android.content.pm.PackageManager
 import android.telephony.SmsManager
 import android.util.Log
+import androidx.core.content.ContextCompat
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 
-/**
- * Sends SMS alerts to emergency contacts.
- *
- * All public functions are fire-and-forget: they log failures but never throw,
- * so callers don't have to wrap them in try/catch.
- */
 object SmsAlertSender {
 
     private const val TAG = "SmsAlertSender"
@@ -30,6 +27,11 @@ object SmsAlertSender {
         lastActivity: String,
         lastLocation: String? = null,
     ) {
+        if (!checkPermissionAndLog(context, "sendNoAnswerAlert")) return
+        if (contacts.isEmpty()) {
+            Log.w(TAG, "sendNoAnswerAlert: no contacts configured — SMS not sent")
+            return
+        }
         val locationPart = if (lastLocation != null) "\nLast known location: $lastLocation" else ""
         val body = "⚠️ DailyOK alert: no response since $lastActivity.$locationPart Please check on them."
         contacts.forEach { phone -> sendSms(context, phone, body) }
@@ -44,8 +46,13 @@ object SmsAlertSender {
         contacts: List<String>,
         lastLocation: String? = null,
     ) {
+        if (!checkPermissionAndLog(context, "sendHelpRequest")) return
+        if (contacts.isEmpty()) {
+            Log.w(TAG, "sendHelpRequest: no contacts configured — SMS not sent")
+            return
+        }
         val locationPart = if (lastLocation != null) "\nLast known location: $lastLocation" else ""
-        val body = "🆘 DailyOK: I need help! Please come now.$locationPart"
+        val body = "DailyOK: I need help! Please come now.$locationPart"
         contacts.forEach { phone -> sendSms(context, phone, body) }
     }
 
@@ -56,15 +63,34 @@ object SmsAlertSender {
         context: Context,
         contacts: List<String>,
     ) {
-        val body = "✅ DailyOK: All OK — sorry for the alarm. Everything is fine."
+        if (!checkPermissionAndLog(context, "sendCancellation")) return
+        if (contacts.isEmpty()) {
+            Log.w(TAG, "sendCancellation: no contacts configured — SMS not sent")
+            return
+        }
+        val body = "DailyOK: All OK — sorry for the alarm. Everything is fine."
         contacts.forEach { phone -> sendSms(context, phone, body) }
     }
 
     // ── private helpers ──────────────────────────────────────────────────────
 
-    @Suppress("DEPRECATION") // SmsManager.getDefault() is fine below API 31
+    /** Returns true if SEND_SMS is granted, false (+ log) otherwise. */
+    private fun checkPermissionAndLog(context: Context, caller: String): Boolean {
+        val granted = ContextCompat.checkSelfPermission(
+            context, Manifest.permission.SEND_SMS
+        ) == PackageManager.PERMISSION_GRANTED
+        if (!granted) {
+            Log.e(TAG, "$caller: SEND_SMS permission NOT granted — SMS blocked")
+        }
+        return granted
+    }
+
+    @Suppress("DEPRECATION")
     private fun sendSms(context: Context, phone: String, body: String) {
-        if (phone.isBlank()) return
+        if (phone.isBlank()) {
+            Log.w(TAG, "sendSms: skipped blank phone number")
+            return
+        }
         try {
             val manager = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S) {
                 context.getSystemService(SmsManager::class.java)
@@ -79,9 +105,9 @@ object SmsAlertSender {
             } else {
                 manager.sendMultipartTextMessage(phone, null, parts, null, null)
             }
-            Log.d(TAG, "SMS sent to $phone")
+            Log.i(TAG, "SMS sent to $phone | body length=${body.length}")
         } catch (e: Exception) {
-            Log.e(TAG, "Failed to send SMS to $phone: ${e.message}")
+            Log.e(TAG, "Failed to send SMS to $phone: ${e.message}", e)
         }
     }
 

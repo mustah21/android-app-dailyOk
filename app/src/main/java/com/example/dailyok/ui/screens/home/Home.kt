@@ -136,14 +136,17 @@ fun HomeScreen(
                 Button(
                     onClick = onOkClick,
                     shape = Corner,
-                    colors = ButtonDefaults.buttonColors(containerColor = Primary),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = WellGreen,
+                        contentColor = Color.White,
+                    ),
                     modifier = Modifier
                         .fillMaxWidth()
-                        .heightIn(min = 64.dp),
+                        .heightIn(min = 192.dp),
                 ) {
                     Text(
                         text = stringResource(R.string.Daily_Ok),
-                        fontSize = 22.sp,
+                        fontSize = 26.sp,
                         fontWeight = FontWeight.Bold,
                     )
                 }
