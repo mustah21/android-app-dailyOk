@@ -14,7 +14,12 @@ import androidx.core.app.NotificationCompat
 import androidx.core.content.ContextCompat
 import com.example.dailyok.MainActivity
 import com.example.dailyok.R
-import com.example.dailyok.platform.sensors.PickupDetector
+import com.example.dailyok.domain.service.PickupDetector
+import com.example.dailyok.domain.useCase.MonitorPickups
+import com.example.dailyok.platform.sensors.AndroidAccelerometerSource
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
 
 /**
  * Foreground service that ensures DailyOK stays active in the background.
@@ -25,7 +30,9 @@ import com.example.dailyok.platform.sensors.PickupDetector
  */
 class CheckService : Service() {
 
-    private var pickupDetector: PickupDetector? = null
+    private val serviceJob = SupervisorJob()
+    private val serviceScope = CoroutineScope(Dispatchers.Default + serviceJob)
+    private var monitorPickups: MonitorPickups? = null
 
     override fun onCreate() {
         super.onCreate()
@@ -36,13 +43,15 @@ class CheckService : Service() {
         ActivityTracker.registerSystemSignals(applicationContext)
         CheckScheduler.reschedule(applicationContext)
 
-        pickupDetector = PickupDetector(
-            context = applicationContext,
+        val source = AndroidAccelerometerSource(applicationContext)
+        val detector = PickupDetector(
             onPickup = { ActivityTracker.record(applicationContext, "phone picked up") },
-            onDebug = { Log.d("PickupDebug", it) },
-        ).apply {
-            if (!start()) {
-                Log.w(TAG, "PickupDetector failed to start (no accelerometer sensor)")
+        ) {
+            Log.d("PickupDebug", it)
+        }
+        monitorPickups = MonitorPickups(source, detector).apply {
+            if (!start(serviceScope)) {
+                Log.w(TAG, "MonitorPickups failed to start (no accelerometer sensor)")
             }
         }
     }
@@ -57,8 +66,9 @@ class CheckService : Service() {
     override fun onDestroy() {
         super.onDestroy()
         Log.d(TAG, "Destroying CheckService")
-        pickupDetector?.stop()
-        pickupDetector = null
+        serviceJob.cancel()
+        monitorPickups?.stop()
+        monitorPickups = null
     }
 
     override fun onBind(intent: Intent?): IBinder? = null
