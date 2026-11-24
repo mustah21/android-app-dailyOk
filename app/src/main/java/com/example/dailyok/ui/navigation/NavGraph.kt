@@ -50,7 +50,7 @@ fun AppNavGraph(app: DailyOkApp) {
     val homeViewModel: HomeViewModel = viewModel(
         factory = HomeViewModel.factory(context, app.container)
     )
-    val helpViewModel: HelpViewModel = viewModel()
+    val helpViewModel: HelpViewModel = viewModel(factory = HelpViewModel.factory(context))
     val settingsViewModel: SettingsViewModel = viewModel(factory = SettingsViewModel.factory(context))
 
     NavHost(
@@ -103,15 +103,16 @@ fun AppNavGraph(app: DailyOkApp) {
 
 
         composable(Routes.HELP) {
-           HelpRoute(
-               viewModel = helpViewModel,
-           )
-        }
-        composable(Routes.MEDS) {
+            // Opening this screen asks the contacts for help right away.
             HelpRoute(
                 viewModel = helpViewModel,
+                onClose = { nav.popBackStack() },
             )
-        }  // Don't have a meds screen rn so for now goes to meds screen
+        }
+        composable(Routes.MEDS) {
+            // No medicine screen yet. (Must not use HelpRoute: that would send a help request.)
+            Text("Medicine screen coming soon")
+        }
 
     }
 }

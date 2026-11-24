@@ -14,6 +14,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
@@ -45,9 +47,12 @@ fun SettingsRoute(viewModel: SettingsViewModel) {
     SettingsScreen(
         state = state,
         onInactivityHoursChange = viewModel::onInactivityHoursChange,
+        onWakeTimeChange = viewModel::onWakeTimeChange,
+        onBedTimeChange = viewModel::onBedTimeChange,
         onAddContact = viewModel::onAddContact,
         onEditContact = viewModel::onEditContact,
         onDeleteContact = viewModel::onDeleteContact,
+        onMoveContact = viewModel::onMoveContact,
         onDraftNameChange = viewModel::onDraftNameChange,
         onDraftPhoneChange = viewModel::onDraftPhoneChange,
         onSaveContact = viewModel::onSaveContact,
@@ -60,9 +65,12 @@ fun SettingsRoute(viewModel: SettingsViewModel) {
 fun SettingsScreen(
     state: SettingsUiState,
     onInactivityHoursChange: (Int) -> Unit,
+    onWakeTimeChange: (LocalTime) -> Unit = {},
+    onBedTimeChange: (LocalTime) -> Unit = {},
     onAddContact: () -> Unit,
     onEditContact: (String) -> Unit,
     onDeleteContact: (String) -> Unit,
+    onMoveContact: (id: String, by: Int) -> Unit = { _, _ -> },
     onDraftNameChange: (String) -> Unit,
     onDraftPhoneChange: (String) -> Unit,
     onSaveContact: () -> Unit,
@@ -78,6 +86,16 @@ fun SettingsScreen(
             verticalArrangement = Arrangement.spacedBy(20.dp),
         ) {
             Text("Settings", style = MaterialTheme.typography.headlineLarge)
+
+            // My day: wake up and bed time (see RoutineSection.kt)
+            RoutineSection(
+                wakeTime = state.wakeTime,
+                bedTime = state.bedTime,
+                morningCheckTime = state.morningCheckTime,
+                error = state.routineError,
+                onWakeTimeChange = onWakeTimeChange,
+                onBedTimeChange = onBedTimeChange,
+            )
 
             // Inactivity period
             Text("Daytime inactivity period", style = MaterialTheme.typography.titleLarge)
@@ -98,15 +116,32 @@ fun SettingsScreen(
 
             // Contacts
             Text("Contacts", style = MaterialTheme.typography.titleLarge)
-            state.contacts.forEach { contact ->
+            Text(
+                "When you press \"I need help\", we ask them for help in this order. " +
+                    "Use the arrows to put the person you prefer first.",
+                style = MaterialTheme.typography.bodyLarge,
+            )
+            state.contacts.forEachIndexed { index, contact ->
                 Card(Modifier.fillMaxWidth()) {
                     Row(
                         modifier = Modifier.padding(start = 16.dp, top = 8.dp, bottom = 8.dp, end = 4.dp),
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
                         Column(Modifier.weight(1f)) {
-                            Text(contact.name, style = MaterialTheme.typography.titleMedium)
+                            Text("${index + 1}. ${contact.name}", style = MaterialTheme.typography.titleMedium)
                             Text(contact.phone, style = MaterialTheme.typography.bodyLarge)
+                        }
+                        IconButton(
+                            onClick = { onMoveContact(contact.id, -1) },
+                            enabled = index > 0,
+                        ) {
+                            Icon(Icons.Default.KeyboardArrowUp, contentDescription = "Move ${contact.name} up")
+                        }
+                        IconButton(
+                            onClick = { onMoveContact(contact.id, 1) },
+                            enabled = index < state.contacts.lastIndex,
+                        ) {
+                            Icon(Icons.Default.KeyboardArrowDown, contentDescription = "Move ${contact.name} down")
                         }
                         IconButton(onClick = { onEditContact(contact.id) }) {
                             Icon(Icons.Default.Edit, contentDescription = "Edit ${contact.name}")

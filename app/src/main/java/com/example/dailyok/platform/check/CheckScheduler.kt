@@ -10,6 +10,7 @@ import com.example.dailyok.data.CheckStore
 import com.example.dailyok.data.DemoSettings
 import com.example.dailyok.domain.CheckDecision
 import com.example.dailyok.domain.CheckEngine
+import com.example.dailyok.platform.help.HelpRequester
 import com.example.dailyok.platform.usage.UsageActivitySource
 import java.time.LocalDateTime
 import java.time.ZoneId
@@ -80,6 +81,7 @@ object CheckScheduler {
         if (store.checkInStep() == "NONE") return
         Log.d(TAG, "Alarm timeout: starting HelpSent phase")
         store.startHelpSentFlow()
+        HelpRequester.requestHelp(context)   // same reach-out as the "I need help" button
         requestPrompt()
         CheckNotifier.showHelpSent(context)
     }

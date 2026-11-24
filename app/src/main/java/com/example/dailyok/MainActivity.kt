@@ -23,6 +23,7 @@ import com.example.dailyok.data.DemoSettings
 import com.example.dailyok.platform.check.ActivityTracker
 import com.example.dailyok.platform.check.CheckNotifier
 import com.example.dailyok.platform.check.CheckScheduler
+import com.example.dailyok.platform.help.HelpRequester
 import com.example.dailyok.ui.checkin.CheckInHost
 import com.example.dailyok.ui.navigation.AppNavGraph
 import com.example.dailyok.ui.theme.DailyOkTheme
@@ -51,6 +52,7 @@ class MainActivity : ComponentActivity() {
                     showDemoTrigger = demo.enabled,
                     promptPending = promptPending,
                     onPromptShown = CheckScheduler::onPromptShown,
+                    onCancelAlert = { HelpRequester.cancel(this) },   // "Help is on the way" > Cancel
                     onImOk = {
                         ActivityTracker.record(this, "I'm OK pressed")
                         showOverLockScreen(false)
