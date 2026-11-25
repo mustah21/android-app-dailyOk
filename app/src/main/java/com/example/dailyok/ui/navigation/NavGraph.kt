@@ -3,7 +3,6 @@ package com.example.dailyok.ui.navigation
 import android.os.Build
 import android.util.Log
 import androidx.annotation.RequiresApi
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.produceState
@@ -57,7 +56,9 @@ fun AppNavGraph(app: DailyOkApp) {
     val homeViewModel: HomeViewModel = viewModel(
         factory = HomeViewModel.factory(context, app.container)
     )
-    val helpViewModel: HelpViewModel = viewModel(factory = HelpViewModel.factory(context))
+    val helpViewModel: HelpViewModel = viewModel(
+        factory = HelpViewModel.factory(app.userManager, context)
+    )
     val settingsViewModel: SettingsViewModel = viewModel(factory = SettingsViewModel.factory(app.userManager))
     val medsViewModel: MedsViewModel = viewModel(factory = MedsViewModel.factory(context))
 
@@ -109,10 +110,10 @@ fun AppNavGraph(app: DailyOkApp) {
         composable(Routes.HOME) {
             HomeRoute(
                 viewModel = homeViewModel,
-                onNeedHelp = { nav.navigate(Routes.HELP)},
+                onNeedHelp = { nav.navigate(Routes.HELP) },
                 onMedsClick = { nav.navigateToTab(Routes.MEDS) },
                 onSettingsClick = { nav.navigateToTab(Routes.SETTINGS) }
-                )
+            )
         }
 
 
@@ -122,15 +123,16 @@ fun AppNavGraph(app: DailyOkApp) {
 
 
         composable(Routes.HELP) {
-            // Opening this screen asks the contacts for help right away.
             HelpRoute(
                 viewModel = helpViewModel,
-                onClose = { nav.popBackStack() },
+                onCancel = {
+                    nav.popBackStack(Routes.HOME, inclusive = false)
+                },
             )
         }
         composable(Routes.MEDS) {
             // No medicine screen yet. (Must not use HelpRoute: that would send a help request.)
-            Text("Medicine screen coming soon")
+            androidx.compose.material3.Text("Medicine screen coming soon")
         }
 
     }

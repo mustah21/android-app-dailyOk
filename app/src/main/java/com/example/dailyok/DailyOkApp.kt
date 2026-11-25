@@ -22,7 +22,6 @@ class DailyOkApp : Application(), Configuration.Provider {
         DataStoreProfileRepository(userManager)
     }
 
-    // Settings accessor delegating directly to DataStore
     val settings: AppSettings by lazy { AppSettings(userManager) }
 
     val container: AppContainer by lazy { AppContainer(this) }
