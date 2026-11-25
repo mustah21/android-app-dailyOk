@@ -20,6 +20,7 @@ import com.example.dailyok.platform.sensors.AndroidAccelerometerSource
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
 
 /**
  * Foreground service that ensures DailyOK stays active in the background.
@@ -30,35 +31,42 @@ import kotlinx.coroutines.SupervisorJob
  */
 class CheckService : Service() {
 
-    private val serviceJob = SupervisorJob()
-    private val serviceScope = CoroutineScope(Dispatchers.Default + serviceJob)
     private var monitorPickups: MonitorPickups? = null
+    private val serviceScope = CoroutineScope(Dispatchers.Default + SupervisorJob())
 
     override fun onCreate() {
         super.onCreate()
         Log.d(TAG, "Creating CheckService")
         createNotificationChannel()
-        startForegroundServiceNotification()
+        if (!startForegroundServiceNotification()) {
+            stopSelf()
+            return
+        }
 
         ActivityTracker.registerSystemSignals(applicationContext)
         CheckScheduler.reschedule(applicationContext)
 
-        val source = AndroidAccelerometerSource(applicationContext)
         val detector = PickupDetector(
             onPickup = { ActivityTracker.record(applicationContext, "phone picked up") },
-        ) {
-            Log.d("PickupDebug", it)
-        }
-        monitorPickups = MonitorPickups(source, detector).apply {
-            if (!start(serviceScope)) {
-                Log.w(TAG, "MonitorPickups failed to start (no accelerometer sensor)")
-            }
+            onDebug = { Log.d("PickupDebug", it) },
+        )
+        val monitor = MonitorPickups(
+            source = AndroidAccelerometerSource(applicationContext),
+            detector = detector,
+        )
+        if (monitor.start(serviceScope)) {
+            monitorPickups = monitor
+        } else {
+            Log.w(TAG, "PickupDetector failed to start (no accelerometer sensor)")
         }
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         Log.d(TAG, "Starting CheckService")
-        startForegroundServiceNotification()
+        if (!startForegroundServiceNotification()) {
+            stopSelf()
+            return START_NOT_STICKY
+        }
         CheckScheduler.reschedule(applicationContext)
         return START_STICKY
     }
@@ -66,14 +74,15 @@ class CheckService : Service() {
     override fun onDestroy() {
         super.onDestroy()
         Log.d(TAG, "Destroying CheckService")
-        serviceJob.cancel()
         monitorPickups?.stop()
         monitorPickups = null
+        serviceScope.cancel()
     }
 
     override fun onBind(intent: Intent?): IBinder? = null
 
-    private fun startForegroundServiceNotification() {
+    /** Shows the ongoing notification. Returns false if Android refused, instead of crashing the app. */
+    private fun startForegroundServiceNotification(): Boolean {
         val openIntent = PendingIntent.getActivity(
             this,
             0,
@@ -82,7 +91,7 @@ class CheckService : Service() {
         )
 
         val notification = NotificationCompat.Builder(this, CHANNEL_ID)
-            .setSmallIcon(R.mipmap.ic_launcher)
+            .setSmallIcon(R.drawable.ic_stat_dailyok)
             .setContentTitle("DailyOK protection active")
             .setContentText("Monitoring daily activity and scheduling checks")
             .setPriority(NotificationCompat.PRIORITY_LOW)
@@ -91,10 +100,17 @@ class CheckService : Service() {
             .setContentIntent(openIntent)
             .build()
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
-            startForeground(NOTIFICATION_ID, notification, ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE)
-        } else {
-            startForeground(NOTIFICATION_ID, notification)
+        return try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+                startForeground(NOTIFICATION_ID, notification, ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE)
+            } else {
+                startForeground(NOTIFICATION_ID, notification)
+            }
+            true
+        } catch (e: Exception) {
+            // e.g. ForegroundServiceStartNotAllowedException when started from the background (Android 12+)
+            Log.e(TAG, "Could not start foreground notification", e)
+            false
         }
     }
 
