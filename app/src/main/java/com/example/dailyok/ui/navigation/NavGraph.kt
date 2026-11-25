@@ -3,7 +3,6 @@ package com.example.dailyok.ui.navigation
 import android.os.Build
 import android.util.Log
 import androidx.annotation.RequiresApi
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.produceState
@@ -25,8 +24,7 @@ import com.example.dailyok.ui.screens.help.HelpRoute
 import com.example.dailyok.ui.screens.help.HelpViewModel
 import com.example.dailyok.ui.screens.home.HomeRoute
 import com.example.dailyok.ui.screens.home.HomeViewModel
-import com.example.dailyok.ui.screens.meds.MedsRoute
-import com.example.dailyok.ui.screens.meds.MedsViewModel
+import com.example.dailyok.ui.screens.meds.MedsScreen
 import com.example.dailyok.ui.screens.settings.SettingsRoute
 import com.example.dailyok.ui.screens.settings.SettingsViewModel
 import com.example.dailyok.ui.screens.welcome.WelcomeRoute
@@ -48,7 +46,7 @@ object Routes {
 fun AppNavGraph(app: DailyOkApp) {
 
     val onboardingDone by produceState<Boolean?>(initialValue = null) {
-        value = app.settings.onboardingDone.first()
+        value = app.userManager.onboardingDoneFlow.first()
     }
     val done = onboardingDone ?: return
     val nav = rememberNavController()
@@ -57,9 +55,10 @@ fun AppNavGraph(app: DailyOkApp) {
     val homeViewModel: HomeViewModel = viewModel(
         factory = HomeViewModel.factory(context, app.container)
     )
-    val helpViewModel: HelpViewModel = viewModel(factory = HelpViewModel.factory(context))
-    val settingsViewModel: SettingsViewModel = viewModel(factory = SettingsViewModel.factory(context))
-    val medsViewModel: MedsViewModel = viewModel(factory = MedsViewModel.factory(context))
+    val helpViewModel: HelpViewModel = viewModel(
+        factory = HelpViewModel.factory(app.userManager, context)
+    )
+    val settingsViewModel: SettingsViewModel = viewModel(factory = SettingsViewModel.factory(app.userManager))
 
     val backStackEntry by nav.currentBackStackEntryAsState()
     val currentRoute = backStackEntry?.destination?.route
@@ -90,7 +89,7 @@ fun AppNavGraph(app: DailyOkApp) {
                 onFinished = {
                     scope.launch {
                         Log.d("Onboarding", "saving flag")
-                        app.settings.setOnboardingDone(true)
+                        app.userManager.setOnboardingDone(true)
                         Log.d("Onboarding", "saved")
                         nav.navigate(Routes.HOME) {
                             popUpTo(Routes.WELCOME) { inclusive = true }
@@ -109,10 +108,10 @@ fun AppNavGraph(app: DailyOkApp) {
         composable(Routes.HOME) {
             HomeRoute(
                 viewModel = homeViewModel,
-                onNeedHelp = { nav.navigate(Routes.HELP)},
+                onNeedHelp = { nav.navigate(Routes.HELP) },
                 onMedsClick = { nav.navigateToTab(Routes.MEDS) },
                 onSettingsClick = { nav.navigateToTab(Routes.SETTINGS) }
-                )
+            )
         }
 
 
@@ -122,15 +121,15 @@ fun AppNavGraph(app: DailyOkApp) {
 
 
         composable(Routes.HELP) {
-            // Opening this screen asks the contacts for help right away.
             HelpRoute(
                 viewModel = helpViewModel,
-                onClose = { nav.popBackStack() },
+                onCancel = {
+                    nav.popBackStack(Routes.HOME, inclusive = false)
+                },
             )
         }
         composable(Routes.MEDS) {
-            // No medicine screen yet. (Must not use HelpRoute: that would send a help request.)
-            Text("Medicine screen coming soon")
+            MedsScreen(onBack = { nav.popBackStack() })
         }
 
     }

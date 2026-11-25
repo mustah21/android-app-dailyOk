@@ -3,13 +3,16 @@ package com.example.dailyok.ui.screens.settings
 import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.viewModelScope
 import com.example.dailyok.data.CheckStore
+import com.example.dailyok.data.UserManager
 import com.example.dailyok.domain.DailyRoutine
 import com.example.dailyok.platform.check.CheckScheduler
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
 import java.time.LocalDate
 import java.time.LocalTime
 import java.util.UUID
@@ -52,28 +55,41 @@ data class SettingsUiState(
     val activity: List<ActivityDay> = emptyList(),
 )
 
-class SettingsViewModel(context: Context) : ViewModel() {
+class SettingsViewModel(
+    private val userManager: UserManager? = null,
+    context: Context? = null,
+) : ViewModel() {
 
-    private val appContext = context.applicationContext
-    private val store = CheckStore(appContext)
+    private val appContext = context?.applicationContext
+    private val store = appContext?.let { CheckStore(it) }
 
     private val _state = MutableStateFlow(
         SettingsUiState(
-            contacts = store.contacts(),
-            inactivityHours = store.config().inactivityHours,
-            wakeTime = store.config().wakeTime,
-            bedTime = store.config().bedTime,
-            morningCheckTime = store.config().morningCheckTime,
+            contacts = if (userManager == null) sampleContacts() else emptyList(),
+            inactivityHours = store?.config()?.inactivityHours ?: 4,
+            wakeTime = store?.config()?.wakeTime ?: LocalTime.of(7, 0),
+            bedTime = store?.config()?.bedTime ?: LocalTime.of(22, 0),
+            morningCheckTime = store?.config()?.morningCheckTime ?: LocalTime.of(10, 0),
             activity = sampleActivity(),
         )
     )
     val state: StateFlow<SettingsUiState> = _state.asStateFlow()
 
+    init {
+        userManager?.let { manager ->
+            viewModelScope.launch {
+                manager.contactsFlow.collect { contactList ->
+                    _state.update { it.copy(contacts = contactList) }
+                }
+            }
+        }
+    }
+
     // Inactivity period
     fun onInactivityHoursChange(hours: Int) {
         val validHours = hours.coerceIn(MIN_HOURS, MAX_HOURS)
-        store.setInactivityHours(validHours)
-        CheckScheduler.reschedule(appContext)
+        store?.setInactivityHours(validHours)
+        appContext?.let { CheckScheduler.reschedule(it) }
         _state.update { it.copy(inactivityHours = validHours) }
     }
 
@@ -83,10 +99,11 @@ class SettingsViewModel(context: Context) : ViewModel() {
     fun onBedTimeChange(time: LocalTime) = saveRoutine(_state.value.wakeTime, time)
 
     private fun saveRoutine(wake: LocalTime, bed: LocalTime) {
-        when (val result = DailyRoutine.apply(store.config(), wake, bed)) {
+        val config = store?.config() ?: return
+        when (val result = DailyRoutine.apply(config, wake, bed)) {
             is DailyRoutine.Result.Ok -> {
                 store.saveConfig(result.config)
-                CheckScheduler.reschedule(appContext)
+                appContext?.let { CheckScheduler.reschedule(it) }
                 _state.update {
                     it.copy(
                         wakeTime = result.config.wakeTime,
@@ -122,22 +139,35 @@ class SettingsViewModel(context: Context) : ViewModel() {
     fun onDismissDraft() =
         _state.update { it.copy(draft = null) }
 
-    fun onSaveContact() = _state.update { s ->
-        val d = s.draft ?: return@update s
+    fun onSaveContact() {
+        val s = _state.value
+        val d = s.draft ?: return
         val nameBad = d.name.isBlank()
-        val phoneBad = d.phone.count(Char::isDigit) < 6
+        val phoneBad = userManager?.let { !UserManager.PhoneValidator.isValid(d.phone) } ?: false
         if (nameBad || phoneBad) {
-            return@update s.copy(draft = d.copy(nameError = nameBad, phoneError = phoneBad))
+            _state.update { it.copy(draft = d.copy(nameError = nameBad, phoneError = phoneBad)) }
+            return
         }
-        val saved = Contact(
-            id = d.id ?: UUID.randomUUID().toString(),
-            name = d.name.trim(),
-            phone = d.phone.trim(),
-        )
-        val list = if (d.id == null) s.contacts + saved
-        else s.contacts.map { if (it.id == saved.id) saved else it }
-        store.saveContacts(list)
-        s.copy(contacts = list, draft = null)
+
+        val trimmedName = d.name.trim()
+        val trimmedPhone = d.phone.trim()
+
+        if (userManager != null) {
+            viewModelScope.launch {
+                userManager.saveContact(id = d.id, name = trimmedName, phone = trimmedPhone)
+            }
+            _state.update { it.copy(draft = null) }
+        } else {
+            val saved = Contact(
+                id = d.id ?: UUID.randomUUID().toString(),
+                name = trimmedName,
+                phone = trimmedPhone,
+            )
+            val list = if (d.id == null) s.contacts + saved
+            else s.contacts.map { if (it.id == saved.id) saved else it }
+            store?.saveContacts(list)
+            _state.update { it.copy(contacts = list, draft = null) }
+        }
     }
 
     /**
@@ -149,27 +179,46 @@ class SettingsViewModel(context: Context) : ViewModel() {
         val to = from + by
         if (from < 0 || to !in s.contacts.indices) return@update s
         val list = s.contacts.toMutableList().apply { add(to, removeAt(from)) }
-        store.saveContacts(list)
+        store?.saveContacts(list)
         s.copy(contacts = list)
     }
 
-    fun onDeleteContact(id: String) = _state.update { s ->
-        val list = s.contacts.filterNot { it.id == id }
-        store.saveContacts(list)
-        s.copy(contacts = list)
+    fun onDeleteContact(id: String) {
+        if (userManager != null) {
+            viewModelScope.launch {
+                userManager.removeContact(id)
+            }
+        } else {
+            _state.update { s ->
+                val list = s.contacts.filterNot { it.id == id }
+                store?.saveContacts(list)
+                s.copy(contacts = list)
+            }
+        }
     }
 
     companion object {
         const val MIN_HOURS = 2
         const val MAX_HOURS = 6
 
+        fun factory(userManager: UserManager) = object : ViewModelProvider.Factory {
+            @Suppress("UNCHECKED_CAST")
+            override fun <T : ViewModel> create(modelClass: Class<T>): T =
+                SettingsViewModel(userManager = userManager) as T
+        }
+
         fun factory(context: Context) = object : ViewModelProvider.Factory {
             @Suppress("UNCHECKED_CAST")
             override fun <T : ViewModel> create(modelClass: Class<T>): T =
-                SettingsViewModel(context.applicationContext) as T
+                SettingsViewModel(context = context.applicationContext) as T
         }
     }
 }
+
+private fun sampleContacts() = listOf(
+    Contact(name = "Anna (daughter)", phone = "+358 40 123 4567"),
+    Contact(name = "Matti (neighbour)", phone = "+358 50 765 4321"),
+)
 
 private fun sampleActivity(): List<ActivityDay> {
     val today = LocalDate.now()

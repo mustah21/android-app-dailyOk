@@ -3,44 +3,67 @@ package com.example.dailyok.ui.screens.help
 import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
-import com.example.dailyok.platform.help.HelpRequest
-import com.example.dailyok.platform.help.HelpRequester
+import androidx.lifecycle.viewModelScope
+import com.example.dailyok.data.UserManager
+import com.example.dailyok.platform.sms.SmsAlertSender
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
 
 data class HelpUiState(
-    /** The help request sent to the contacts when the screen opened. */
-    val request: HelpRequest? = null,
+    // True once "I need help" has been tapped and SMS sent.
+    val helpSent: Boolean = false,
+    // True while the SMS is being sent (brief, but avoids double-taps).
+    val sending: Boolean = false,
 )
 
-/**
- * "I need help": opening the screen asks the contacts for help straight away ([HelpRequester]),
- * in the order set in Settings > Contacts. The only action left is cancelling.
- */
-class HelpViewModel(context: Context) : ViewModel() {
-
-    private val appContext = context.applicationContext
+class HelpViewModel(
+    private val userManager: UserManager,
+    private val appContext: Context,
+) : ViewModel() {
 
     private val _state = MutableStateFlow(HelpUiState())
     val state: StateFlow<HelpUiState> = _state.asStateFlow()
 
-    /** Called when the screen opens: send the help request (only once while it is active). */
-    fun onOpen() {
-        _state.value = HelpUiState(request = HelpRequester.requestHelp(appContext))
+    fun requestHelp() {
+        if (_state.value.sending || _state.value.helpSent) return
+        _state.update { it.copy(sending = true) }
+
+        viewModelScope.launch {
+            val contacts = userManager.contactsFlow.first()
+            val phones = contacts.map { it.phone }
+            SmsAlertSender.sendHelpRequest(
+                context = appContext,
+                contacts = phones,
+                lastLocation = null,  // location not yet implemented
+            )
+            _state.update { it.copy(sending = false, helpSent = true) }
+        }
     }
 
-    /** Pressed by mistake or the person is fine: close the request and tell the contacts. */
-    fun onCancelRequest() {
-        HelpRequester.cancel(appContext)
-        _state.value = HelpUiState(request = null)
+    fun cancelHelp() {
+        if (!_state.value.helpSent) return
+
+        viewModelScope.launch {
+            val contacts = userManager.contactsFlow.first()
+            val phones = contacts.map { it.phone }
+            SmsAlertSender.sendCancellation(
+                context = appContext,
+                contacts = phones,
+            )
+            _state.update { it.copy(helpSent = false) }
+        }
     }
 
     companion object {
-        fun factory(context: Context) = object : ViewModelProvider.Factory {
-            @Suppress("UNCHECKED_CAST")
-            override fun <T : ViewModel> create(modelClass: Class<T>): T =
-                HelpViewModel(context.applicationContext) as T
-        }
+        fun factory(userManager: UserManager, context: Context) =
+            object : ViewModelProvider.Factory {
+                @Suppress("UNCHECKED_CAST")
+                override fun <T : ViewModel> create(modelClass: Class<T>): T =
+                    HelpViewModel(userManager, context.applicationContext) as T
+            }
     }
 }
