@@ -7,6 +7,12 @@ import android.content.IntentFilter
 import android.util.Log
 import androidx.core.content.ContextCompat
 import com.example.dailyok.data.CheckStore
+import com.example.dailyok.data.db.ActivityEventEntity
+import com.example.dailyok.data.db.AppDatabase
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.launch
 
 /**
  * Records "signs of normal life" and moves the next check accordingly.
@@ -24,9 +30,17 @@ object ActivityTracker {
 
     private const val TAG = "ActivityTracker"
     private var registered = false
-
+    private val ioScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     fun record(context: Context, source: String) {
         Log.d(TAG, "Activity: $source")
+
+        val appContext = context.applicationContext
+        val now = System.currentTimeMillis()
+        ioScope.launch {
+            AppDatabase.get(appContext).activityEventDao()
+                .insertAndTrim(ActivityEventEntity(timestamp = now, type = source))
+        }
+
         val store = CheckStore(context)
         store.recordActivity()
         store.clearCheckInFlow()

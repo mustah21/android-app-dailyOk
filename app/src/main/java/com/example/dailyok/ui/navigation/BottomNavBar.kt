@@ -24,7 +24,6 @@ private data class NavTab(val route: String, val label: String, val icon: @Compo
 private val tabs = listOf(
     NavTab(Routes.HOME, "Home") { rememberVectorPainter(Icons.Filled.Home) },
     NavTab(Routes.MEDS, "Medicines") { painterResource(R.drawable.ic_nav_meds) },
-    NavTab(Routes.SETTINGS, "Settings") { rememberVectorPainter(Icons.Filled.Settings) },
 )
 
 /** Routes that show the bottom bar. Welcome and "I need help" stay full screen. */

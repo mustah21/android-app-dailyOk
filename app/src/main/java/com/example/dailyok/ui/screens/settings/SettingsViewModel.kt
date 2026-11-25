@@ -1,5 +1,6 @@
 package com.example.dailyok.ui.screens.settings
 
+import android.app.ListActivity
 import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
@@ -13,6 +14,14 @@ import kotlinx.coroutines.flow.update
 import java.time.LocalDate
 import java.time.LocalTime
 import java.util.UUID
+import androidx.lifecycle.viewModelScope
+import com.example.dailyok.data.db.ActivityEventEntity
+import com.example.dailyok.data.db.AppDatabase
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.launch
+import java.time.Instant
+import java.time.ZoneId
+
 
 data class Contact(
     val id: String = UUID.randomUUID().toString(),
@@ -64,10 +73,17 @@ class SettingsViewModel(context: Context) : ViewModel() {
             wakeTime = store.config().wakeTime,
             bedTime = store.config().bedTime,
             morningCheckTime = store.config().morningCheckTime,
-            activity = sampleActivity(),
         )
     )
     val state: StateFlow<SettingsUiState> = _state.asStateFlow()
+
+    init {
+        viewModelScope.launch {
+            AppDatabase.get(appContext).activityEventDao().observeLatest()
+                .map { it.toActivityDays() }
+                .collect { days -> _state.update { it.copy(activity = days) } }
+        }
+    }
 
     // Inactivity period
     fun onInactivityHoursChange(hours: Int) {
@@ -171,22 +187,21 @@ class SettingsViewModel(context: Context) : ViewModel() {
     }
 }
 
-private fun sampleActivity(): List<ActivityDay> {
-    val today = LocalDate.now()
-    return listOf(
-        ActivityDay(today, "Normal activity", emptyList()),
-        ActivityDay(
-            today.minusDays(1), "1 alert",
-            listOf(
-                ActivityAlert(LocalTime.of(14, 20), "No activity for 4 hours", urgent = true),
-                ActivityAlert(LocalTime.of(14, 35), "Anna confirmed you are OK", urgent = false),
-            ),
-        ),
-        ActivityDay(today.minusDays(2), "Normal activity", emptyList()),
-        ActivityDay(
-            today.minusDays(3), "1 alert",
-            listOf(ActivityAlert(LocalTime.of(11, 5), "No activity for 4 hours", urgent = true)),
-        ),
-        ActivityDay(today.minusDays(4), "Normal activity", emptyList()),
-    )
+private fun List<ActivityEventEntity>.toActivityDays(): List<ActivityDay> {
+    val zone = ZoneId.systemDefault()
+    return map { it to Instant.ofEpochMilli(it.timestamp).atZone(zone) }
+        .groupBy({ (_, time) -> time.toLocalDate() }, { it })
+        .map { (date, items) ->
+            ActivityDay(
+                date = date,
+                summary = if (items.size == 1) "1 activity" else "${items.size} activities",
+                alerts = items.map { (event, time) ->
+                    ActivityAlert(
+                        time = time.toLocalTime(),
+                        message = event.type.replaceFirstChar { it.uppercase() },
+                        urgent = false,
+                    )
+                },
+            )
+        }
 }
