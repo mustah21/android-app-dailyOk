@@ -56,7 +56,7 @@ object CheckNotifier {
             CheckReason.DAYTIME_INACTIVITY -> "We haven't seen you for a while. Tap here."
         }
         val notification = NotificationCompat.Builder(context, CHANNEL_ID)
-            .setSmallIcon(R.mipmap.ic_launcher)
+            .setSmallIcon(R.drawable.ic_stat_dailyok)
             .setContentTitle("Are you OK?")
             .setContentText(text)
             .setPriority(NotificationCompat.PRIORITY_MAX)
@@ -86,7 +86,7 @@ object CheckNotifier {
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
         )
         val notification = NotificationCompat.Builder(context, CHANNEL_ID)
-            .setSmallIcon(R.mipmap.ic_launcher)
+            .setSmallIcon(R.drawable.ic_stat_dailyok)
             .setContentTitle("Emergency Alert - Are you OK?")
             .setContentText("Emergency countdown active. Tap to open.")
             .setPriority(NotificationCompat.PRIORITY_MAX)
@@ -120,7 +120,7 @@ object CheckNotifier {
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
         )
         val notification = NotificationCompat.Builder(context, CHANNEL_ID)
-            .setSmallIcon(R.mipmap.ic_launcher)
+            .setSmallIcon(R.drawable.ic_stat_dailyok)
             .setContentTitle("Help is on the way")
             .setContentText("We have sent a message to $names.")
             .setPriority(NotificationCompat.PRIORITY_HIGH)

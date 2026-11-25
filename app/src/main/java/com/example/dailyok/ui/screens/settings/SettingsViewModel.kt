@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import com.example.dailyok.data.CheckStore
+import com.example.dailyok.domain.DailyRoutine
 import com.example.dailyok.platform.check.CheckScheduler
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -42,6 +43,11 @@ data class ActivityDay(
 data class SettingsUiState(
     val contacts: List<Contact> = emptyList(),
     val inactivityHours: Int = 4,
+    /** My day: entered by the person, no checks while they sleep. */
+    val wakeTime: LocalTime = LocalTime.of(7, 0),
+    val bedTime: LocalTime = LocalTime.of(22, 0),
+    val morningCheckTime: LocalTime = LocalTime.of(10, 0),
+    val routineError: String? = null,
     val draft: ContactDraft? = null,          // non-null = dialog is open
     val activity: List<ActivityDay> = emptyList(),
 )
@@ -55,6 +61,9 @@ class SettingsViewModel(context: Context) : ViewModel() {
         SettingsUiState(
             contacts = store.contacts(),
             inactivityHours = store.config().inactivityHours,
+            wakeTime = store.config().wakeTime,
+            bedTime = store.config().bedTime,
+            morningCheckTime = store.config().morningCheckTime,
             activity = sampleActivity(),
         )
     )
@@ -66,6 +75,29 @@ class SettingsViewModel(context: Context) : ViewModel() {
         store.setInactivityHours(validHours)
         CheckScheduler.reschedule(appContext)
         _state.update { it.copy(inactivityHours = validHours) }
+    }
+
+    // My day: wake up and bed time
+    fun onWakeTimeChange(time: LocalTime) = saveRoutine(time, _state.value.bedTime)
+
+    fun onBedTimeChange(time: LocalTime) = saveRoutine(_state.value.wakeTime, time)
+
+    private fun saveRoutine(wake: LocalTime, bed: LocalTime) {
+        when (val result = DailyRoutine.apply(store.config(), wake, bed)) {
+            is DailyRoutine.Result.Ok -> {
+                store.saveConfig(result.config)
+                CheckScheduler.reschedule(appContext)
+                _state.update {
+                    it.copy(
+                        wakeTime = result.config.wakeTime,
+                        bedTime = result.config.bedTime,
+                        morningCheckTime = result.config.morningCheckTime,
+                        routineError = null,
+                    )
+                }
+            }
+            is DailyRoutine.Result.Invalid -> _state.update { it.copy(routineError = result.message) }
+        }
     }
 
     // Contact dialog
@@ -106,6 +138,19 @@ class SettingsViewModel(context: Context) : ViewModel() {
         else s.contacts.map { if (it.id == saved.id) saved else it }
         store.saveContacts(list)
         s.copy(contacts = list, draft = null)
+    }
+
+    /**
+     * Moves a contact up (-1) or down (+1) in the list. The order is who "I need help" calls
+     * first, second and so on, before emergency services.
+     */
+    fun onMoveContact(id: String, by: Int) = _state.update { s ->
+        val from = s.contacts.indexOfFirst { it.id == id }
+        val to = from + by
+        if (from < 0 || to !in s.contacts.indices) return@update s
+        val list = s.contacts.toMutableList().apply { add(to, removeAt(from)) }
+        store.saveContacts(list)
+        s.copy(contacts = list)
     }
 
     fun onDeleteContact(id: String) = _state.update { s ->
