@@ -215,6 +215,11 @@ class SettingsViewModel(
     }
 }
 
+private fun sampleContacts() = listOf(
+    Contact(name = "Anna (daughter)", phone = "+358 40 123 4567"),
+    Contact(name = "Matti (neighbour)", phone = "+358 50 765 4321"),
+)
+
 private fun sampleActivity(): List<ActivityDay> {
     val today = LocalDate.now()
     return listOf(
