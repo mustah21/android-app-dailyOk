@@ -45,6 +45,10 @@
             android:exported="false" />
 
         <receiver
+            android:name=".platform.meds.MedicationReminderReceiver"
+            android:exported="false" />
+
+        <receiver
             android:name=".platform.check.BootReceiver"
             android:enabled="true"
             android:exported="true">

@@ -15,11 +15,18 @@ import androidx.lifecycle.viewmodel.viewModelFactory
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.compose.currentBackStackEntryAsState
+import androidx.compose.foundation.layout.consumeWindowInsets
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.Scaffold
+import androidx.compose.ui.Modifier
 import com.example.dailyok.DailyOkApp
 import com.example.dailyok.ui.screens.help.HelpRoute
 import com.example.dailyok.ui.screens.help.HelpViewModel
 import com.example.dailyok.ui.screens.home.HomeRoute
 import com.example.dailyok.ui.screens.home.HomeViewModel
+import com.example.dailyok.ui.screens.meds.MedsRoute
+import com.example.dailyok.ui.screens.meds.MedsViewModel
 import com.example.dailyok.ui.screens.settings.SettingsRoute
 import com.example.dailyok.ui.screens.settings.SettingsViewModel
 import com.example.dailyok.ui.screens.welcome.WelcomeRoute
@@ -52,10 +59,22 @@ fun AppNavGraph(app: DailyOkApp) {
     )
     val helpViewModel: HelpViewModel = viewModel(factory = HelpViewModel.factory(context))
     val settingsViewModel: SettingsViewModel = viewModel(factory = SettingsViewModel.factory(context))
+    val medsViewModel: MedsViewModel = viewModel(factory = MedsViewModel.factory(context))
 
+    val backStackEntry by nav.currentBackStackEntryAsState()
+    val currentRoute = backStackEntry?.destination?.route
+
+    // Bottom bar on Home, Medicines and Settings (see BottomNavBar.kt).
+    Scaffold(
+        bottomBar = {
+            if (currentRoute in bottomBarRoutes) BottomNavBar(nav, currentRoute)
+        },
+    ) { barPadding ->
     NavHost(
         navController = nav,
         startDestination = if (done) Routes.HOME else Routes.WELCOME,
+        // consumeWindowInsets: the screens' own Scaffolds then don't add the bottom inset twice.
+        modifier = Modifier.padding(barPadding).consumeWindowInsets(barPadding),
     ) {
         composable(Routes.WELCOME) {
             val scope = rememberCoroutineScope()
@@ -91,8 +110,8 @@ fun AppNavGraph(app: DailyOkApp) {
             HomeRoute(
                 viewModel = homeViewModel,
                 onNeedHelp = { nav.navigate(Routes.HELP)},
-                onMedsClick = { nav.navigate(Routes.MEDS) },
-                onSettingsClick = {nav.navigate(Routes.SETTINGS)}
+                onMedsClick = { nav.navigateToTab(Routes.MEDS) },
+                onSettingsClick = { nav.navigateToTab(Routes.SETTINGS) }
                 )
         }
 
@@ -115,6 +134,5 @@ fun AppNavGraph(app: DailyOkApp) {
         }
 
     }
+    }
 }
-
-

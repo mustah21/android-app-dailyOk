@@ -2,7 +2,9 @@ package com.example.dailyok
 
 import android.app.Application
 import androidx.work.Configuration
+import com.example.dailyok.data.MedicationStore
 import com.example.dailyok.platform.check.ActivityTracker
+import com.example.dailyok.platform.meds.MedicationReminders
 import com.example.dailyok.platform.check.CheckScheduler
 import com.example.dailyok.platform.check.CheckService
 import com.example.dailyok.platform.worker.ActivityScheduler
@@ -32,6 +34,9 @@ class DailyOkApp : Application(), Configuration.Provider {
         CheckScheduler.reschedule(this)
         CheckService.start(this)
         ActivityScheduler.schedule(this)   // 12-hour usage log sync
+        // Medication reminders: keep the alarm on the next dose after every change.
+        MedicationStore.onChanged = MedicationReminders::schedule
+        MedicationReminders.schedule(this)
     }
 }
 

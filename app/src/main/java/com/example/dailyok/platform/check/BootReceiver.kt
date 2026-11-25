@@ -4,6 +4,7 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.util.Log
+import com.example.dailyok.platform.meds.MedicationReminders
 
 /**
  * Restarts DailyOK background checks and foreground service after phone restarts (BOOT_COMPLETED).
@@ -18,6 +19,7 @@ class BootReceiver : BroadcastReceiver() {
         ) {
             CheckScheduler.reschedule(context)
             CheckService.start(context)
+            MedicationReminders.schedule(context)
         }
     }
 

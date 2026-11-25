@@ -25,6 +25,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.LifecycleResumeEffect
 import com.example.dailyok.R
+import com.example.dailyok.domain.meds.Dose
 
 private val TextMain = Color(0xFF1A1A1A)
 private val TextSecondary = Color(0xFF4A4A4A)
@@ -53,6 +54,7 @@ fun HomeRoute(
         onNeedHelp = onNeedHelp,
         onPauseChanged = viewModel::onPauseChanged,
         onMedsClick = onMedsClick,
+        onMedTaken = viewModel::onMedTaken,
         onSettingsClick = onSettingsClick,
         onGrantUsageAccess = {
             context.startActivity(Intent(Settings.ACTION_USAGE_ACCESS_SETTINGS))
@@ -70,7 +72,8 @@ fun HomeScreen(
     onMedsClick: () -> Unit,
     onSettingsClick: () -> Unit,
     onGrantUsageAccess: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onMedTaken: (Dose) -> Unit = {}
 ) {
     Scaffold(modifier = modifier) { padding ->
 
@@ -116,9 +119,10 @@ fun HomeScreen(
                 }
             }
 
-            MedicationCard(
-                medication = state.medication,
-                onClick = onMedsClick
+            MedicationPreview(
+                doses = state.upcomingMeds,
+                onTaken = onMedTaken,
+                onOpen = onMedsClick
             )
 
             NeedHelpButton(
