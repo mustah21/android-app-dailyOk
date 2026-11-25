@@ -3,6 +3,7 @@ package com.example.dailyok
 import android.app.Application
 import androidx.work.Configuration
 import com.example.dailyok.data.MedicationStore
+import com.example.dailyok.data.UserManager
 import com.example.dailyok.platform.check.ActivityTracker
 import com.example.dailyok.platform.meds.MedicationReminders
 import com.example.dailyok.platform.check.CheckScheduler
@@ -11,14 +12,18 @@ import com.example.dailyok.platform.worker.ActivityScheduler
 import com.example.dailyok.platform.worker.AppWorkerFactory
 import com.example.dailyok.ui.screens.welcome.ProfileRepository
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.update
 import java.time.LocalDate
 
 class DailyOkApp : Application(), Configuration.Provider {
-    val settings: Settings by lazy { Settings() }
-    val profileRepository: ProfileRepository by lazy { InMemoryProfileRepository(settings) }
+    val userManager: UserManager by lazy { UserManager(this) }
+    val userSettingsStore: UserManager get() = userManager
+
+    val profileRepository: ProfileRepository by lazy {
+        DataStoreProfileRepository(userManager)
+    }
+
+    // Settings accessor delegating directly to DataStore
+    val settings: AppSettings by lazy { AppSettings(userManager) }
 
     val container: AppContainer by lazy { AppContainer(this) }
 
@@ -29,7 +34,6 @@ class DailyOkApp : Application(), Configuration.Provider {
 
     override fun onCreate() {
         super.onCreate()
-        // Morning and daytime checks: listen for unlocks/unplugging and set the next check alarm.
         ActivityTracker.registerSystemSignals(this)
         CheckScheduler.reschedule(this)
         CheckService.start(this)
@@ -40,17 +44,20 @@ class DailyOkApp : Application(), Configuration.Provider {
     }
 }
 
-class Settings {
-    private val _onboardingDone = MutableStateFlow(value = true)
-    val onboardingDone: Flow<Boolean> = _onboardingDone.asStateFlow()
+class AppSettings(private val userManager: UserManager) {
+    val onboardingDone: Flow<Boolean> get() = userManager.onboardingDoneFlow
 
-    fun setOnboardingDone(done: Boolean) {
-        _onboardingDone.update { done }
+    suspend fun setOnboardingDone(done: Boolean) {
+        userManager.setOnboardingDone(done)
     }
 }
 
-class InMemoryProfileRepository(private val settings: Settings) : ProfileRepository {
+class DataStoreProfileRepository(
+    private val userManager: UserManager
+) : ProfileRepository {
     override suspend fun completeOnboarding(name: String, email: String, birthDate: LocalDate?) {
-        settings.setOnboardingDone(done = true)
+        // dob is saved as an Int (epochDay or 0)
+        val epochDay = birthDate?.toEpochDay()?.toInt() ?: 0
+        userManager.storeUser(dob = epochDay, name = name, mail = email)
     }
 }
