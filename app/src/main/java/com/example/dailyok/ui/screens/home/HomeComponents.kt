@@ -91,23 +91,24 @@ fun DailyCheckIn(
     lastActiveText: String,
     onOkClick: () -> Unit
 ) {
-    Box(
+    Column(
         modifier = Modifier.fillMaxWidth(),
-        contentAlignment = Alignment.Center
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        // Outer mint circle
+        // Outer circle
         Box(
             modifier = Modifier
                 .size(210.dp)
-                .background(MintBg, CircleShape),
+                .background(if (canPressOk) MintBg else SubtleBorder.copy(alpha = 0.3f), CircleShape),
             contentAlignment = Alignment.Center
         ) {
-            // Inner forest green circle
+            // Inner circle
             Box(
                 modifier = Modifier
                     .size(170.dp)
-                    .background(ForestGreen, CircleShape)
-                    .then(if (canPressOk) Modifier.clickable(onClick = onOkClick) else Modifier),
+                    .background(if (canPressOk) ForestGreen else SubtleBorder, CircleShape)
+                    .clickable(enabled = canPressOk, onClick = onOkClick),
                 contentAlignment = Alignment.Center
             ) {
                 Column(
@@ -117,21 +118,28 @@ fun DailyCheckIn(
                     Icon(
                         imageVector = Icons.Filled.Check,
                         contentDescription = null,
-                        tint = Color.White,
+                        tint = if (canPressOk) Color.White else SecondaryText,
                         modifier = Modifier.size(48.dp)
                     )
                     Text(
-                        text = "I'm OK",
+                        text = if (canPressOk) "I'm OK" else "All good!",
                         fontSize = 20.sp,
                         fontWeight = FontWeight.Bold,
-                        color = Color.White
+                        color = if (canPressOk) Color.White else SecondaryText
                     )
                 }
             }
         }
+
+        if (!canPressOk && lastActiveText.isNotEmpty()) {
+            Text(
+                text = lastActiveText,
+                fontSize = 16.sp,
+                color = SecondaryText
+            )
+        }
     }
 }
-
 @Composable
 fun StatusBanner(
     title: String,
