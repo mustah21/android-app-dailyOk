@@ -1,6 +1,7 @@
 package com.example.dailyok.data
 
 import android.content.Context
+import androidx.core.content.edit
 import com.example.dailyok.domain.CheckConfig
 import com.example.dailyok.ui.screens.settings.Contact
 import org.json.JSONArray
@@ -10,7 +11,6 @@ import java.time.LocalDateTime
 import java.time.LocalTime
 import java.time.ZoneId
 import java.util.UUID
-import androidx.core.content.edit
 
 /**
  * Everything the daily checks need to remember, stored only on the phone.
@@ -35,9 +35,15 @@ class CheckStore(private val context: Context) {
         }
     }
 
+    fun recordActivity(dateTime: LocalDateTime) {
+        val ms = dateTime.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()
+        recordActivity(ms)
+    }
+
     /** When the "Are you OK?" prompt was last started by a check. */
     fun lastPrompt(): LocalDateTime? = prefs.getLong(KEY_LAST_PROMPT, 0L).toLocalDateTimeOrNull()
 
+    @Suppress("unused")
     fun recordPrompt(atMs: Long = System.currentTimeMillis()) {
         prefs.edit { putLong(KEY_LAST_PROMPT, atMs) }
     }
@@ -59,10 +65,10 @@ class CheckStore(private val context: Context) {
     fun saveConfig(config: CheckConfig) {
         prefs.edit {
             putInt(KEY_WAKE_MIN, config.wakeTime.toMinuteOfDay())
-                .putInt(KEY_MORNING_MIN, config.morningCheckTime.toMinuteOfDay())
-                .putInt(KEY_BED_MIN, config.bedTime.toMinuteOfDay())
-                .putInt(KEY_INACTIVITY_HOURS, config.inactivityHours)
-                .putBoolean(KEY_PAUSED, config.paused)
+            putInt(KEY_MORNING_MIN, config.morningCheckTime.toMinuteOfDay())
+            putInt(KEY_BED_MIN, config.bedTime.toMinuteOfDay())
+            putInt(KEY_INACTIVITY_HOURS, config.inactivityHours)
+            putBoolean(KEY_PAUSED, config.paused)
         }
     }
 
@@ -94,11 +100,11 @@ class CheckStore(private val context: Context) {
 
     fun saveContacts(contacts: List<Contact>) {
         val array = JSONArray()
-        for (c in contacts) {
+        for ((id, name, phone) in contacts) {
             val obj = JSONObject()
-            obj.put("id", c.id)
-            obj.put("name", c.name)
-            obj.put("phone", c.phone)
+            obj.put("id", id)
+            obj.put("name", name)
+            obj.put("phone", phone)
             array.put(obj)
         }
         prefs.edit { putString(KEY_CONTACTS, array.toString()) }
@@ -120,31 +126,31 @@ class CheckStore(private val context: Context) {
     fun startPromptFlow(atMs: Long = System.currentTimeMillis()) {
         prefs.edit {
             putString(KEY_FLOW_STEP, "PROMPT")
-                .putLong(KEY_PROMPT_START_MS, atMs)
-                .putLong(KEY_LAST_PROMPT, atMs)
+            putLong(KEY_PROMPT_START_MS, atMs)
+            putLong(KEY_LAST_PROMPT, atMs)
         }
     }
 
     fun startAlarmFlow(atMs: Long = System.currentTimeMillis()) {
         prefs.edit {
             putString(KEY_FLOW_STEP, "ALARM")
-                .putLong(KEY_ALARM_START_MS, atMs)
+            putLong(KEY_ALARM_START_MS, atMs)
         }
     }
 
     fun startHelpSentFlow(atMs: Long = System.currentTimeMillis()) {
-        prefs.edit()
-            .putString(KEY_FLOW_STEP, "HELP_SENT")
-            .putLong(KEY_HELP_SENT_MS, atMs)
-            .apply()
+        prefs.edit {
+            putString(KEY_FLOW_STEP, "HELP_SENT")
+            putLong(KEY_HELP_SENT_MS, atMs)
+        }
     }
 
     fun clearCheckInFlow() {
         prefs.edit {
             putString(KEY_FLOW_STEP, "NONE")
-                .remove(KEY_PROMPT_START_MS)
-                .remove(KEY_ALARM_START_MS)
-                .remove(KEY_HELP_SENT_MS)
+            remove(KEY_PROMPT_START_MS)
+            remove(KEY_ALARM_START_MS)
+            remove(KEY_HELP_SENT_MS)
         }
     }
 
@@ -152,7 +158,10 @@ class CheckStore(private val context: Context) {
 
     /** Set the last activity to any time, even earlier than the stored one. */
     fun setLastActivityForDemo(atMs: Long) {
-        prefs.edit { putLong(KEY_LAST_ACTIVITY, atMs).putLong(KEY_HOME_OK_CLICK, 0L) }
+        prefs.edit {
+            putLong(KEY_LAST_ACTIVITY, atMs)
+            putLong(KEY_HOME_OK_CLICK, 0L)
+        }
     }
 
     /** Forget the last prompt, so the next check can prompt again. */
