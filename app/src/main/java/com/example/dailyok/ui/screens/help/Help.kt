@@ -28,7 +28,13 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
-private val HelpRed = Color(0xFFB3261E)
+import androidx.compose.foundation.background
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import com.example.dailyok.ui.theme.ForestGreen
+import com.example.dailyok.ui.theme.HelpRed
+import com.example.dailyok.ui.theme.MainText
+import com.example.dailyok.ui.theme.SecondaryText
 
 @Composable
 fun HelpRoute(
@@ -71,6 +77,7 @@ private fun HelpRequestContent(
     Column(
         modifier = Modifier
             .fillMaxSize()
+            .background(Color(0xFFF8F5EE))
             .padding(24.dp),
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -86,24 +93,25 @@ private fun HelpRequestContent(
             text = "I need help",
             fontSize = 32.sp,
             fontWeight = FontWeight.Bold,
+            color = MainText,
             textAlign = TextAlign.Center,
         )
         Spacer(Modifier.height(12.dp))
         Text(
             text = "Tap the button below to alert both of your emergency contacts right now.",
             fontSize = 18.sp,
-            color = Color(0xFF4A4A4A),
+            color = SecondaryText,
             textAlign = TextAlign.Center,
         )
         Spacer(Modifier.height(40.dp))
         Button(
             onClick = onRequestHelp,
             enabled = !sending,
-            shape = MaterialTheme.shapes.large,
+            shape = RoundedCornerShape(16.dp),
             colors = ButtonDefaults.buttonColors(containerColor = HelpRed),
             modifier = Modifier
                 .fillMaxWidth()
-                .height(96.dp),
+                .height(64.dp),
         ) {
             if (sending) {
                 CircularProgressIndicator(
@@ -113,7 +121,7 @@ private fun HelpRequestContent(
             } else {
                 Text(
                     text = "Send help alert",
-                    fontSize = 22.sp,
+                    fontSize = 20.sp,
                     fontWeight = FontWeight.Bold,
                     color = Color.White,
                 )
@@ -129,6 +137,7 @@ private fun HelpSentContent(
     Column(
         modifier = Modifier
             .fillMaxSize()
+            .background(Color(0xFFF8F5EE))
             .padding(24.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -137,39 +146,42 @@ private fun HelpSentContent(
         Icon(
             Icons.AutoMirrored.Filled.Send,
             contentDescription = null,
-            tint = MaterialTheme.colorScheme.primary,
+            tint = ForestGreen,
             modifier = Modifier.size(64.dp),
         )
         Text(
             text = "Help is on the way",
             fontSize = 30.sp,
             fontWeight = FontWeight.Bold,
+            color = MainText,
             textAlign = TextAlign.Center,
         )
         Text(
             text = "We have sent an alert to your emergency contacts.",
             fontSize = 18.sp,
-            color = Color(0xFF4A4A4A),
+            color = SecondaryText,
             textAlign = TextAlign.Center,
         )
         Spacer(Modifier.weight(1f))
         Text(
             text = "Pressed by mistake? Tap Cancel and we will tell them you are OK.",
             fontSize = 16.sp,
-            color = Color(0xFF4A4A4A),
+            color = SecondaryText,
             textAlign = TextAlign.Center,
         )
         Button(
             onClick = onCancel,
-            shape = MaterialTheme.shapes.large,
+            shape = RoundedCornerShape(16.dp),
+            colors = ButtonDefaults.buttonColors(containerColor = ForestGreen),
             modifier = Modifier
                 .fillMaxWidth()
-                .height(64.dp),
+                .height(60.dp),
         ) {
             Text(
                 text = "Cancel – All OK",
                 fontSize = 18.sp,
                 fontWeight = FontWeight.Bold,
+                color = Color.White,
             )
         }
         Spacer(Modifier.height(16.dp))

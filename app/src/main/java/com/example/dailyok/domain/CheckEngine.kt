@@ -7,8 +7,7 @@ import java.time.LocalTime
 /**
  * Settings that drive the daily checks.
  *
- * Assumes the person wakes up and goes to bed on the same calendar day
- * (wakeTime < morningCheckTime < bedTime).
+ * Assumes the person wakes up and goes to bed on the same calendar day (or spanning midnight).
  */
 data class CheckConfig(
     /** Start of the waking day. Activity before this is "last night", not "this morning". */
@@ -25,8 +24,21 @@ data class CheckConfig(
     val demoInactivitySeconds: Int? = null,
 ) {
     init {
-        require(wakeTime < morningCheckTime && morningCheckTime < bedTime) {
-            "Expected wakeTime < morningCheckTime < bedTime"
+        val wakeMins = wakeTime.hour * 60 + wakeTime.minute
+        val bedMins = bedTime.hour * 60 + bedTime.minute
+        val sleepMinutes = if (wakeMins > bedMins) wakeMins - bedMins else (1440 - bedMins) + wakeMins
+        val awakeMinutes = 1440 - sleepMinutes
+        require(awakeMinutes >= MIN_INACTIVITY_HOURS * 60 && sleepMinutes >= 4 * 60) {
+            "Invalid sleep/awake duration"
+        }
+        val morningMins = morningCheckTime.hour * 60 + morningCheckTime.minute
+        val morningValid = if (bedMins > wakeMins) {
+            morningMins in wakeMins..bedMins
+        } else {
+            morningMins >= wakeMins || morningMins < bedMins
+        }
+        require(morningValid) {
+            "Expected morningCheckTime between wakeTime and bedTime"
         }
         require(inactivityHours in MIN_INACTIVITY_HOURS..MAX_INACTIVITY_HOURS) {
             "inactivityHours must be $MIN_INACTIVITY_HOURS..$MAX_INACTIVITY_HOURS"
@@ -93,7 +105,11 @@ object CheckEngine {
         val today = now.toLocalDate()
         val wake = today.atTime(config.wakeTime)
         val morningCheck = today.atTime(config.morningCheckTime)
-        val bed = today.atTime(config.bedTime)
+        val bed = if (config.bedTime > config.wakeTime) {
+            today.atTime(config.bedTime)
+        } else {
+            today.plusDays(1).atTime(config.bedTime)
+        }
 
         // Sleep hours: nothing to check (unless running in demo mode with custom seconds).
         if (!isDemo && (now < wake || now >= bed)) return CheckDecision.AllWell
@@ -138,7 +154,11 @@ object CheckEngine {
         val today = now.toLocalDate()
         val wake = today.atTime(config.wakeTime)
         val morningCheck = today.atTime(config.morningCheckTime)
-        val bed = today.atTime(config.bedTime)
+        val bed = if (config.bedTime > config.wakeTime) {
+            today.atTime(config.bedTime)
+        } else {
+            today.plusDays(1).atTime(config.bedTime)
+        }
 
         if (!isDemo && (now < wake || now >= bed)) return nextMorningCheck(now, config)
 

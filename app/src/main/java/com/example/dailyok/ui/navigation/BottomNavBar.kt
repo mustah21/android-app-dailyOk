@@ -18,6 +18,12 @@ import androidx.compose.foundation.layout.size
 import androidx.navigation.NavHostController
 import com.example.dailyok.R
 
+import androidx.compose.material3.NavigationBarItemDefaults
+import androidx.compose.ui.graphics.Color
+import com.example.dailyok.ui.theme.ForestGreen
+import com.example.dailyok.ui.theme.MintBg
+import com.example.dailyok.ui.theme.SecondaryText
+
 /** The pages reachable from the bottom bar, in order. */
 private data class NavTab(val route: String, val label: String, val icon: @Composable () -> Painter)
 
@@ -29,16 +35,27 @@ private val tabs = listOf(
 /** Routes that show the bottom bar. Welcome and "I need help" stay full screen. */
 val bottomBarRoutes = tabs.map { it.route }.toSet()
 
-/** Bottom navigation: Home, Medicines, Settings. Large icons and labels for easy tapping. */
+/** Bottom navigation: Home, Medicines. Large icons and labels for easy tapping. */
 @Composable
 fun BottomNavBar(nav: NavHostController, currentRoute: String?) {
-    NavigationBar {
+    NavigationBar(
+        containerColor = MaterialTheme.colorScheme.background,
+        contentColor = MaterialTheme.colorScheme.onBackground,
+    ) {
         tabs.forEach { tab ->
+            val isSelected = currentRoute == tab.route
             NavigationBarItem(
-                selected = currentRoute == tab.route,
+                selected = isSelected,
                 onClick = { nav.navigateToTab(tab.route) },
                 icon = { Icon(tab.icon(), contentDescription = null, modifier = Modifier.size(28.dp)) },
                 label = { Text(tab.label, style = MaterialTheme.typography.titleSmall) },
+                colors = NavigationBarItemDefaults.colors(
+                    selectedIconColor = ForestGreen,
+                    selectedTextColor = ForestGreen,
+                    indicatorColor = MintBg,
+                    unselectedIconColor = SecondaryText,
+                    unselectedTextColor = SecondaryText,
+                ),
             )
         }
     }

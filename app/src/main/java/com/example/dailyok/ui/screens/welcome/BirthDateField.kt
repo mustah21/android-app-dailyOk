@@ -30,6 +30,14 @@ import com.example.dailyok.R
 
 
 
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextFieldDefaults
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.unit.dp
+import com.example.dailyok.ui.theme.ForestGreen
+import com.example.dailyok.ui.theme.SubtleBorder
+
 @RequiresApi(Build.VERSION_CODES.O)
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -54,6 +62,17 @@ fun BirthDateField(
         onValueChange = {},
         readOnly = true,
         label = { Text(stringResource(R.string.welcome_birthDate_label)) },
+        shape = RoundedCornerShape(16.dp),
+        colors = OutlinedTextFieldDefaults.colors(
+            focusedContainerColor = Color.White,
+            unfocusedContainerColor = Color.White,
+            disabledContainerColor = Color.White,
+            errorContainerColor = Color.White,
+            focusedBorderColor = ForestGreen,
+            unfocusedBorderColor = SubtleBorder,
+            focusedLabelColor = ForestGreen,
+            unfocusedLabelColor = MaterialTheme.colorScheme.onSurfaceVariant,
+        ),
         isError = errorText != null,
         supportingText = errorText?.let { { Text(it) } },
         singleLine = true,

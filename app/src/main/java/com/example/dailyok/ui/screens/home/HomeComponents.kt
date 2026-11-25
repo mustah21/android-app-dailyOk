@@ -41,15 +41,18 @@ import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
 
-private val TextMain = Color(0xFF1A1A1A)
-private val TextSecondary = Color(0xFF4A4A4A)
-private val Primary = Color(0xFF1F4E9C)
-private val WellGreen = Color(0xFF1E6B3A)
-private val WellGreenBg = Color(0xFFE7F3EC)
-private val HelpRed = Color(0xFFB3261E)
-private val WarningBg = Color(0xFFFFE8A3)
-
-private val Corner = RoundedCornerShape(16.dp)
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.SwitchDefaults
+import com.example.dailyok.ui.theme.ForestGreen
+import com.example.dailyok.ui.theme.HelpRed
+import com.example.dailyok.ui.theme.MainText
+import com.example.dailyok.ui.theme.MintBg
+import com.example.dailyok.ui.theme.SecondaryText
+import com.example.dailyok.ui.theme.SubtleBorder
 
 @Composable
 fun HomeHeader(
@@ -61,22 +64,22 @@ fun HomeHeader(
         verticalAlignment = Alignment.CenterVertically
     ) {
         Text(
-            text = LocalDate.now()
-                .format(DateTimeFormatter.ofPattern("EEEE, MMMM d")),
+            text = LocalDate.now().format(DateTimeFormatter.ofPattern("EEE d MMM")),
             fontSize = 18.sp,
-            color = TextSecondary,
+            color = SecondaryText,
+            fontWeight = FontWeight.Medium,
             modifier = Modifier.weight(1f)
         )
 
         IconButton(
             onClick = onSettingsClick,
-            modifier = Modifier.size(56.dp)
+            modifier = Modifier.size(48.dp)
         ) {
             Icon(
                 imageVector = Icons.Filled.Settings,
                 contentDescription = "Settings",
-                tint = TextSecondary,
-                modifier = Modifier.size(32.dp)
+                tint = SecondaryText,
+                modifier = Modifier.size(28.dp)
             )
         }
     }
@@ -88,37 +91,44 @@ fun DailyCheckIn(
     lastActiveText: String,
     onOkClick: () -> Unit
 ) {
-    if (canPressOk) {
-        Button(
-            onClick = onOkClick,
-            shape = Corner,
-            colors = ButtonDefaults.buttonColors(
-                containerColor = Primary
-            ),
+    Box(
+        modifier = Modifier.fillMaxWidth(),
+        contentAlignment = Alignment.Center
+    ) {
+        // Outer mint circle
+        Box(
             modifier = Modifier
-                .fillMaxWidth()
-                .heightIn(min = 64.dp)
+                .size(210.dp)
+                .background(MintBg, CircleShape),
+            contentAlignment = Alignment.Center
         ) {
-            Text(
-                text = stringResource(R.string.Daily_Ok),
-                fontSize = 22.sp,
-                fontWeight = FontWeight.Bold
-            )
+            // Inner forest green circle
+            Box(
+                modifier = Modifier
+                    .size(170.dp)
+                    .background(ForestGreen, CircleShape)
+                    .then(if (canPressOk) Modifier.clickable(onClick = onOkClick) else Modifier),
+                contentAlignment = Alignment.Center
+            ) {
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center
+                ) {
+                    Icon(
+                        imageVector = Icons.Filled.Check,
+                        contentDescription = null,
+                        tint = Color.White,
+                        modifier = Modifier.size(48.dp)
+                    )
+                    Text(
+                        text = "I'm OK",
+                        fontSize = 20.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color.White
+                    )
+                }
+            }
         }
-
-        Text(
-            text = stringResource(R.string.LET_FAMILY_KNOW),
-            fontSize = 18.sp,
-            color = TextSecondary
-        )
-    } else {
-        StatusBanner(
-            title = "All is well",
-            subtitle = lastActiveText,
-            icon = Icons.Filled.Check,
-            background = WellGreenBg,
-            contentColor = WellGreen
-        )
     }
 }
 
@@ -133,7 +143,7 @@ fun StatusBanner(
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .background(background, Corner)
+            .background(background, RoundedCornerShape(20.dp))
             .padding(20.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(8.dp)
@@ -149,13 +159,13 @@ fun StatusBanner(
             text = title,
             fontSize = 24.sp,
             fontWeight = FontWeight.Bold,
-            color = TextMain
+            color = MainText
         )
 
         Text(
             text = subtitle,
             fontSize = 16.sp,
-            color = TextSecondary
+            color = SecondaryText
         )
     }
 }
@@ -164,28 +174,36 @@ fun StatusBanner(
 fun NeedHelpButton(
     onClick: () -> Unit
 ) {
-    Button(
+    OutlinedButton(
         onClick = onClick,
-        shape = Corner,
-        colors = ButtonDefaults.buttonColors(
-            containerColor = HelpRed,
-            contentColor = Color.White
+        shape = RoundedCornerShape(16.dp),
+        border = BorderStroke(1.5.dp, HelpRed),
+        colors = ButtonDefaults.outlinedButtonColors(
+            containerColor = Color.White,
+            contentColor = HelpRed
         ),
         modifier = Modifier
             .fillMaxWidth()
-            .heightIn(min = 96.dp)
+            .heightIn(min = 60.dp)
     ) {
-        Icon(
-            imageVector = Icons.Filled.Warning,
-            contentDescription = null,
-            modifier = Modifier.size(28.dp)
-        )
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(10.dp)
+        ) {
+            Icon(
+                imageVector = Icons.Filled.Warning,
+                contentDescription = null,
+                tint = HelpRed,
+                modifier = Modifier.size(24.dp)
+            )
 
-        Text(
-            text = stringResource(R.string.NEED_HELP),
-            fontSize = 22.sp,
-            fontWeight = FontWeight.Bold
-        )
+            Text(
+                text = stringResource(R.string.NEED_HELP),
+                fontSize = 20.sp,
+                fontWeight = FontWeight.Bold,
+                color = HelpRed
+            )
+        }
     }
 }
 
@@ -197,7 +215,7 @@ fun PauseSwitch(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .heightIn(min = 64.dp)
+            .heightIn(min = 56.dp)
             .toggleable(
                 value = isPaused,
                 role = Role.Switch,
@@ -208,14 +226,21 @@ fun PauseSwitch(
     ) {
         Text(
             text = stringResource(R.string.PAUSE_FOR_HOLIDAYS),
-            fontSize = 20.sp,
-            color = TextMain,
+            fontSize = 18.sp,
+            color = MainText,
             modifier = Modifier.weight(1f)
         )
 
         Switch(
             checked = isPaused,
-            onCheckedChange = null
+            onCheckedChange = null,
+            colors = SwitchDefaults.colors(
+                checkedThumbColor = Color.White,
+                checkedTrackColor = ForestGreen,
+                uncheckedThumbColor = Color.White,
+                uncheckedTrackColor = SubtleBorder,
+                uncheckedBorderColor = Color.Transparent,
+            )
         )
     }
 }

@@ -24,16 +24,39 @@ object DailyRoutine {
 
     /** Applies new wake and bed times to [config], or explains why they can't be used. */
     fun apply(config: CheckConfig, wakeTime: LocalTime, bedTime: LocalTime): Result {
-        if (!bedTime.isAfter(wakeTime)) {
-            return Result.Invalid("Bed time must be later in the day than waking up time.")
+        val wakeMins = wakeTime.hour * 60 + wakeTime.minute
+        val bedMins = bedTime.hour * 60 + bedTime.minute
+
+        if (wakeMins == bedMins) {
+            return Result.Invalid("Wake time and bed time cannot be the same.")
         }
-        if (Duration.between(wakeTime, bedTime) < MIN_AWAKE) {
-            return Result.Invalid("Please allow at least ${MIN_AWAKE.toHours()} hours between waking up and bed time.")
+
+        val sleepMinutes = if (wakeMins > bedMins) {
+            wakeMins - bedMins
+        } else {
+            (1440 - bedMins) + wakeMins
         }
+
+        val awakeMinutes = 1440 - sleepMinutes
+        if (awakeMinutes < MIN_AWAKE.toMinutes() || sleepMinutes < 4 * 60) {
+            return Result.Invalid("Please allow at least 4 hours of sleep and 4 hours awake time.")
+        }
+
+        val morningCheck = morningCheckFor(wakeTime)
+        val morningMins = morningCheck.hour * 60 + morningCheck.minute
+        val morningValid = if (bedMins > wakeMins) {
+            morningMins in wakeMins..bedMins
+        } else {
+            morningMins >= wakeMins || morningMins < bedMins
+        }
+        if (!morningValid) {
+            return Result.Invalid("Morning check must be before bed time.")
+        }
+
         return Result.Ok(
             config.copy(
                 wakeTime = wakeTime,
-                morningCheckTime = morningCheckFor(wakeTime),
+                morningCheckTime = morningCheck,
                 bedTime = bedTime,
             )
         )

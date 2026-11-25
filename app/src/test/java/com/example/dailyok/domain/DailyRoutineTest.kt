@@ -29,19 +29,25 @@ class DailyRoutineTest {
         assertEquals(true, result.config.paused)
     }
 
-    @Test fun `bed time before wake time is rejected`() {
-        assertEquals(true, DailyRoutine.apply(config, t(7), t(1)) is DailyRoutine.Result.Invalid)
+    @Test fun `bed time at 1 AM and wake up at 7 AM is accepted as cross-midnight sleep`() {
+        val result = DailyRoutine.apply(config, t(7), t(1))
+        assertEquals(true, result is DailyRoutine.Result.Ok)
     }
 
     @Test fun `same wake and bed time is rejected`() {
         assertEquals(true, DailyRoutine.apply(config, t(7), t(7)) is DailyRoutine.Result.Invalid)
     }
 
-    @Test fun `less than 4 hours awake is rejected`() {
-        assertEquals(true, DailyRoutine.apply(config, t(7), t(10, 59)) is DailyRoutine.Result.Invalid)
+    @Test fun `less than 4 hours sleep is rejected`() {
+        assertEquals(true, DailyRoutine.apply(config, t(7), t(5)) is DailyRoutine.Result.Invalid)
     }
 
     @Test fun `exactly 4 hours awake is accepted`() {
         assertEquals(true, DailyRoutine.apply(config, t(7), t(11)) is DailyRoutine.Result.Ok)
+    }
+
+    @Test fun `wake up at 09 00 and bed time at 00 00 midnight is accepted`() {
+        val result = DailyRoutine.apply(config, t(9), t(0))
+        assertEquals(true, result is DailyRoutine.Result.Ok)
     }
 }

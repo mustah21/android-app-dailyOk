@@ -13,11 +13,11 @@ import androidx.compose.ui.graphics.Color
 // Dynamic colour (Material You) is deliberately NOT used: it would replace this palette
 // with colours from the user's wallpaper and break the contrast rules.
 private val DailyOkColorScheme = lightColorScheme(
-    primary = PrimaryBlue,
+    primary = ForestGreen,
     onPrimary = OnColor,
-    secondary = AllWellGreen,
+    secondary = ForestGreen,
     onSecondary = OnColor,
-    secondaryContainer = AllWellLight,
+    secondaryContainer = MintBg,
     onSecondaryContainer = MainText,
     tertiary = WarningAmber,
     onTertiary = MainText,
@@ -25,19 +25,20 @@ private val DailyOkColorScheme = lightColorScheme(
     onError = OnColor,
     background = Background,
     onBackground = MainText,
-    surface = Background,
+    surface = Surface,
     onSurface = MainText,
     surfaceVariant = Surface,
     onSurfaceVariant = SecondaryText,
-    outline = Outline,
+    outline = ForestGreen,
+    outlineVariant = SubtleBorder,
 )
 
 /** Colours for the app's states, so screens never pick status colours by hand. */
 @Immutable
 data class StatusColors(
-    val allWell: Color = AllWellGreen,
+    val allWell: Color = ForestGreen,
     val onAllWell: Color = OnColor,
-    val allWellLight: Color = AllWellLight,
+    val allWellLight: Color = MintBg,
     val help: Color = HelpRed,
     val onHelp: Color = OnColor,
     val warning: Color = WarningAmber,

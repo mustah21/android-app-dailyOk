@@ -11,13 +11,16 @@ import androidx.compose.ui.Modifier
 import com.example.dailyok.ui.theme.ButtonText
 import com.example.dailyok.ui.theme.Dimens
 
-/** Normal action button: full width, 64dp tall, calm blue. */
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.unit.dp
+
+/** Normal action button: full width, 56dp tall, calm forest green. */
 @Composable
 fun DailyOkButton(text: String, onClick: () -> Unit, modifier: Modifier = Modifier) {
     Button(
         onClick = onClick,
         modifier = modifier.fillMaxWidth().height(Dimens.ButtonHeight),
-        shape = MaterialTheme.shapes.medium,
+        shape = RoundedCornerShape(16.dp),
         colors = ButtonDefaults.buttonColors(
             containerColor = MaterialTheme.colorScheme.primary,
             contentColor = MaterialTheme.colorScheme.onPrimary,
