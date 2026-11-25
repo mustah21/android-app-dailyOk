@@ -47,12 +47,18 @@ import java.time.LocalTime
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
 
-private val TextMain      = Color(0xFF1A1A1A)
-private val TextSecondary = Color(0xFF4A4A4A)
-private val WellGreen     = Color(0xFF1E6B3A)
-private val WellGreenBg   = Color(0xFFE7F3EC)
-private val Surface       = Color(0xFFF5F5F2)
-private val Corner        = RoundedCornerShape(16.dp)
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.border
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material3.LinearProgressIndicator
+import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.ui.draw.clip
+import com.example.dailyok.ui.theme.ForestGreen
+import com.example.dailyok.ui.theme.MainText
+import com.example.dailyok.ui.theme.MintBgTaken
+import com.example.dailyok.ui.theme.SecondaryText
+
+private val Corner = RoundedCornerShape(20.dp)
 
 data class MedLogEntry(
     val name: String,
@@ -64,10 +70,9 @@ data class MedLogEntry(
 val pseudoMeds = listOf(
     MedLogEntry("Blood Pressure Pill",  "1 × 10 mg",  LocalTime.of(8, 0),  LocalDate.now()),
     MedLogEntry("Vitamin D",            "1 × 1000 IU", LocalTime.of(8, 0),  LocalDate.now()),
-    MedLogEntry("Evening Heart Tablet", "1 × 5 mg",   LocalTime.of(20, 0), null),
     MedLogEntry("Aspirin",              "1 × 100 mg", LocalTime.of(12, 0), null),
+    MedLogEntry("Evening Heart Tablet", "1 × 5 mg",   LocalTime.of(20, 0), null),
 )
-
 
 @RequiresApi(Build.VERSION_CODES.O)
 @OptIn(ExperimentalMaterial3Api::class)
@@ -76,14 +81,16 @@ fun MedsScreen(onBack: () -> Unit) {
     var entries by remember { mutableStateOf(pseudoMeds) }
 
     Scaffold(
+        containerColor = Color(0xFFF8F5EE),
         topBar = {
             TopAppBar(
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color(0xFFF8F5EE)),
                 title = {
                     Text(
-                        text = "Medication Log",
-                        fontSize = 22.sp,
+                        text = "Medication log",
+                        fontSize = 24.sp,
                         fontWeight = FontWeight.Bold,
-                        color = TextMain,
+                        color = MainText,
                     )
                 },
                 navigationIcon = {
@@ -91,7 +98,7 @@ fun MedsScreen(onBack: () -> Unit) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                             contentDescription = "Back",
-                            tint = TextMain,
+                            tint = MainText,
                         )
                     }
                 },
@@ -104,44 +111,49 @@ fun MedsScreen(onBack: () -> Unit) {
                 .fillMaxSize()
                 .verticalScroll(rememberScrollState())
                 .padding(horizontal = 20.dp, vertical = 8.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
-
             val takenCount = entries.count { it.takenDate == LocalDate.now() }
             val totalCount = entries.size
-            val allDone    = takenCount == totalCount
+            val progressFraction = if (totalCount > 0) takenCount.toFloat() / totalCount.toFloat() else 0f
 
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .background(if (allDone) WellGreenBg else Color(0xFFFFF3E0), Corner)
-                    .padding(16.dp),
+            // Today's progress card
+            Card(
+                shape = Corner,
+                colors = CardDefaults.cardColors(containerColor = Color.White),
+                modifier = Modifier.fillMaxWidth(),
             ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                Column(
+                    modifier = Modifier.padding(20.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
-                    if (allDone) {
-                        Icon(
-                            imageVector = Icons.Filled.CheckCircle,
-                            contentDescription = null,
-                            tint = WellGreen,
-                            modifier = Modifier.size(32.dp),
-                        )
-                    }
-                    Column {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
                         Text(
-                            text = if (allDone) "All done for today! 🎉" else "Today's progress",
+                            text = "Today's progress",
                             fontSize = 18.sp,
                             fontWeight = FontWeight.Bold,
-                            color = if (allDone) WellGreen else TextMain,
+                            color = MainText,
                         )
                         Text(
-                            text = "$takenCount of $totalCount medications taken",
-                            fontSize = 15.sp,
-                            color = TextSecondary,
+                            text = "$takenCount of $totalCount",
+                            fontSize = 16.sp,
+                            color = SecondaryText,
                         )
                     }
+
+                    LinearProgressIndicator(
+                        progress = { progressFraction },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(8.dp)
+                            .clip(CircleShape),
+                        color = ForestGreen,
+                        trackColor = Color(0xFFEFECE6),
+                    )
                 }
             }
 
@@ -156,14 +168,13 @@ fun MedsScreen(onBack: () -> Unit) {
                 )
             }
 
-            Spacer(Modifier.height(24.dp))
-
+            Spacer(Modifier.height(12.dp))
 
             Text(
                 text = "Recent history",
                 fontSize = 20.sp,
                 fontWeight = FontWeight.Bold,
-                color = TextMain,
+                color = MainText,
             )
 
             listOf(
@@ -173,20 +184,20 @@ fun MedsScreen(onBack: () -> Unit) {
             ).forEach { (day, detail) ->
                 Card(
                     shape = Corner,
-                    colors = CardDefaults.cardColors(containerColor = Surface),
+                    colors = CardDefaults.cardColors(containerColor = Color.White),
                     modifier = Modifier.fillMaxWidth(),
                 ) {
-                    Column(modifier = Modifier.padding(14.dp)) {
+                    Column(modifier = Modifier.padding(16.dp)) {
                         Text(
                             text = day,
-                            fontSize = 15.sp,
+                            fontSize = 16.sp,
                             fontWeight = FontWeight.Bold,
-                            color = TextMain,
+                            color = MainText,
                         )
                         Text(
                             text = detail,
-                            fontSize = 14.sp,
-                            color = TextSecondary,
+                            fontSize = 15.sp,
+                            color = SecondaryText,
                         )
                     }
                 }
@@ -202,12 +213,12 @@ fun MedsScreen(onBack: () -> Unit) {
 @Composable
 private fun MedCard(med: MedLogEntry, onMarkTaken: () -> Unit) {
     val takenToday = med.takenDate == LocalDate.now()
-    val timeText   = med.scheduledTime.format(DateTimeFormatter.ofLocalizedTime(FormatStyle.SHORT))
+    val timeText   = med.scheduledTime.format(DateTimeFormatter.ofPattern("H:mm"))
 
     Card(
         shape = Corner,
         colors = CardDefaults.cardColors(
-            containerColor = if (takenToday) WellGreenBg else Color.White,
+            containerColor = if (takenToday) MintBgTaken else Color.White,
         ),
         modifier = Modifier
             .fillMaxWidth()
@@ -216,23 +227,30 @@ private fun MedCard(med: MedLogEntry, onMarkTaken: () -> Unit) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 14.dp),
+                .padding(horizontal = 16.dp, vertical = 16.dp),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            horizontalArrangement = Arrangement.spacedBy(14.dp),
         ) {
             // Status icon
             if (takenToday) {
-                Icon(
-                    imageVector = Icons.Filled.Check,
-                    contentDescription = "Taken",
-                    tint = WellGreen,
-                    modifier = Modifier.size(28.dp),
-                )
+                Box(
+                    modifier = Modifier
+                        .size(32.dp)
+                        .background(ForestGreen, CircleShape),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Icon(
+                        imageVector = Icons.Filled.Check,
+                        contentDescription = "Taken",
+                        tint = Color.White,
+                        modifier = Modifier.size(20.dp),
+                    )
+                }
             } else {
                 Box(
                     modifier = Modifier
-                        .size(28.dp)
-                        .background(Color(0xFFDDDDD8), RoundedCornerShape(50)),
+                        .size(32.dp)
+                        .border(BorderStroke(2.dp, Color(0xFFC2C8C4)), CircleShape),
                 )
             }
 
@@ -240,32 +258,24 @@ private fun MedCard(med: MedLogEntry, onMarkTaken: () -> Unit) {
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = med.name,
-                    fontSize = 17.sp,
+                    fontSize = 18.sp,
                     fontWeight = FontWeight.Bold,
-                    color = TextMain,
+                    color = MainText,
                 )
                 Text(
-                    text = "${med.dose} · $timeText",
-                    fontSize = 14.sp,
-                    color = TextSecondary,
+                    text = if (takenToday) "${med.dose} · $timeText · taken" else "${med.dose} · $timeText",
+                    fontSize = 15.sp,
+                    color = SecondaryText,
                 )
-                if (takenToday) {
-                    Text(
-                        text = "Taken today ✓",
-                        fontSize = 13.sp,
-                        color = WellGreen,
-                        fontWeight = FontWeight.Medium,
-                    )
-                }
             }
 
             // Mark taken button
             if (!takenToday) {
                 Button(
                     onClick = onMarkTaken,
-                    colors = ButtonDefaults.buttonColors(containerColor = WellGreen),
-                    shape = RoundedCornerShape(10.dp),
-                    modifier = Modifier.heightIn(min = 44.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = ForestGreen),
+                    shape = RoundedCornerShape(12.dp),
+                    modifier = Modifier.heightIn(min = 40.dp),
                 ) {
                     Text(
                         text = "Mark taken",

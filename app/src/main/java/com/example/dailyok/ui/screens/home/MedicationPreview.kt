@@ -28,6 +28,12 @@ import com.example.dailyok.ui.theme.DailyOkTheme
 import java.time.LocalDate
 import java.time.LocalTime
 
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.CardDefaults
+import androidx.compose.ui.graphics.Color
+import com.example.dailyok.ui.theme.ForestGreen
+import com.example.dailyok.ui.theme.SecondaryText
+
 /**
  * Home screen: the next medicines to take. Doses that are due have an "I took it" button.
  * Tapping the card opens the Medicines page.
@@ -39,18 +45,36 @@ fun MedicationPreview(
     onOpen: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    Card(onClick = onOpen, modifier = modifier.fillMaxWidth()) {
-        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+    Card(
+        onClick = onOpen,
+        shape = RoundedCornerShape(20.dp),
+        colors = CardDefaults.cardColors(containerColor = Color.White),
+        modifier = modifier.fillMaxWidth(),
+    ) {
+        Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(
                     stringResource(R.string.medication_label),
-                    style = MaterialTheme.typography.titleLarge,
+                    style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
                     modifier = Modifier.weight(1f),
                 )
-                TextButton(onClick = onOpen, modifier = Modifier.heightIn(min = 48.dp)) { Text("See all") }
+                TextButton(
+                    onClick = onOpen,
+                    modifier = Modifier.heightIn(min = 40.dp)
+                ) {
+                    Text(
+                        "See all",
+                        color = ForestGreen,
+                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)
+                    )
+                }
             }
             if (doses.isEmpty()) {
-                Text("No medicines added. Tap here to add them.", style = MaterialTheme.typography.bodyLarge)
+                Text(
+                    "No medicines added yet. Add your first one.",
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = SecondaryText
+                )
             }
             doses.forEachIndexed { i, dose ->
                 if (i > 0) HorizontalDivider()

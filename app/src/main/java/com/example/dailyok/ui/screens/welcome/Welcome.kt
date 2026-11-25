@@ -34,6 +34,19 @@ import com.example.dailyok.R
 import java.time.LocalDate
 
 
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Lock
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Icon
+import androidx.compose.material3.OutlinedTextFieldDefaults
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
+import com.example.dailyok.ui.theme.ForestGreen
+import com.example.dailyok.ui.theme.SubtleBorder
+
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun WelcomeRoute(
@@ -60,8 +73,19 @@ fun WelcomeScreen(
     onContinue: () -> Unit,
 ) {
     val fieldText = MaterialTheme.typography.titleLarge
+    val fieldShape = RoundedCornerShape(16.dp)
+    val fieldColors = OutlinedTextFieldDefaults.colors(
+        focusedContainerColor = Color.White,
+        unfocusedContainerColor = Color.White,
+        disabledContainerColor = Color.White,
+        errorContainerColor = Color.White,
+        focusedBorderColor = ForestGreen,
+        unfocusedBorderColor = SubtleBorder,
+        focusedLabelColor = ForestGreen,
+        unfocusedLabelColor = MaterialTheme.colorScheme.onSurfaceVariant,
+    )
 
-    Scaffold { padding ->
+    Scaffold(containerColor = MaterialTheme.colorScheme.background) { padding ->
         Column(
             modifier = Modifier
                 .padding(padding)
@@ -72,12 +96,12 @@ fun WelcomeScreen(
         ) {
             Text(
                 text = stringResource(R.string.welcome_step),
-                style = MaterialTheme.typography.titleMedium,
-                color = MaterialTheme.colorScheme.primary,
+                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
+                color = ForestGreen,
             )
             Text(
                 text = stringResource(R.string.welcome_title),
-                style = MaterialTheme.typography.headlineLarge,
+                style = MaterialTheme.typography.headlineLarge.copy(fontWeight = FontWeight.Bold),
             )
             Text(
                 text = stringResource(R.string.welcome_subtitle),
@@ -91,6 +115,8 @@ fun WelcomeScreen(
                 label = { Text(text = stringResource(R.string.welcome_name_label)) },
                 textStyle = fieldText,
                 singleLine = true,
+                shape = fieldShape,
+                colors = fieldColors,
                 isError = state.nameError != null,
                 supportingText = state.nameError?.let { { Text(it) } },
                 keyboardOptions = KeyboardOptions(
@@ -107,6 +133,8 @@ fun WelcomeScreen(
                 label = { Text(text = stringResource(R.string.welcome_email_label)) },
                 textStyle = fieldText,
                 singleLine = true,
+                shape = fieldShape,
+                colors = fieldColors,
                 isError = state.emailError != null,
                 supportingText = state.emailError?.let { { Text(it) } },
                 keyboardOptions = KeyboardOptions(
@@ -115,17 +143,30 @@ fun WelcomeScreen(
                 ),
                 modifier = Modifier.fillMaxWidth(),
             )
+
             BirthDateField(
                 value = state.birthDate,
                 onValueChange = onBirthDateChange,
                 errorText = state.birthDateError,
             )
 
-            Text(
-                text = stringResource(R.string.welcome_privacy_note),
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(10.dp),
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                Icon(
+                    imageVector = Icons.Outlined.Lock,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                Text(
+                    text = stringResource(R.string.welcome_privacy_note),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.weight(1f),
+                )
+            }
 
             Spacer(Modifier.height(4.dp))
 
@@ -133,12 +174,18 @@ fun WelcomeScreen(
                 onClick = onContinue,
                 enabled = !state.saving,
                 shape = RoundedCornerShape(16.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = ForestGreen,
+                    contentColor = Color.White,
+                ),
                 modifier = Modifier
                     .fillMaxWidth()
-                    .heightIn(min = 64.dp),
+                    .heightIn(min = 60.dp),
             ) {
-                Text(text = stringResource(R.string.welcome_continue),
-                     style = MaterialTheme.typography.titleLarge)
+                Text(
+                    text = stringResource(R.string.welcome_continue),
+                    style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
+                )
             }
         }
     }

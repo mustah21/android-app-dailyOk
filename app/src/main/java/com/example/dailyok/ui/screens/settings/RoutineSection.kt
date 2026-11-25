@@ -1,14 +1,23 @@
 package com.example.dailyok.ui.screens.settings
 
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TimePicker
@@ -16,17 +25,21 @@ import androidx.compose.material3.rememberTimePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import com.example.dailyok.ui.theme.ForestGreen
+import com.example.dailyok.ui.theme.MainText
+import com.example.dailyok.ui.theme.SecondaryText
 import java.time.LocalTime
 
-/**
- * Settings > My day: the person enters when they usually wake up and go to bed.
- * No checks run during sleep hours; the morning check is 3 hours after waking up.
- */
 @Composable
 fun RoutineSection(
     wakeTime: LocalTime,
@@ -36,21 +49,29 @@ fun RoutineSection(
     onWakeTimeChange: (LocalTime) -> Unit,
     onBedTimeChange: (LocalTime) -> Unit,
 ) {
-    // Which time is being edited: "wake", "bed" or null.
     var editing by rememberSaveable { mutableStateOf<String?>(null) }
 
-    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        Text("My day", style = MaterialTheme.typography.titleLarge)
-        TimeRow("I usually wake up at", wakeTime) { editing = "wake" }
-        TimeRow("I usually go to bed at", bedTime) { editing = "bed" }
-        if (error != null) {
-            Text(error, style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.error)
+    Card(
+        shape = RoundedCornerShape(20.dp),
+        colors = CardDefaults.cardColors(containerColor = Color.White),
+        modifier = Modifier.fillMaxWidth(),
+    ) {
+        Column(
+            modifier = Modifier.padding(20.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp),
+        ) {
+            Text("My day", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = MainText)
+            TimeRow("I usually wake up at", wakeTime) { editing = "wake" }
+            TimeRow("I usually go to bed at", bedTime) { editing = "bed" }
+            if (error != null) {
+                Text(error, style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.error)
+            }
+            Text(
+                "We don't check on you while you sleep.",
+                fontSize = 15.sp,
+                color = SecondaryText,
+            )
         }
-        Text(
-            "We don't check on you while you sleep. If there is no sign of you by " +
-                "${morningCheckTime.hm()}, we ask if you are OK.",
-            style = MaterialTheme.typography.bodyLarge,
-        )
     }
 
     when (editing) {
@@ -67,11 +88,22 @@ fun RoutineSection(
 private fun TimeRow(label: String, time: LocalTime, onChange: () -> Unit) {
     Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
         Column(Modifier.weight(1f)) {
-            Text(label, style = MaterialTheme.typography.bodyLarge)
-            Text(time.hm(), style = MaterialTheme.typography.headlineMedium)
+            Text(label, fontSize = 16.sp, color = SecondaryText)
+            Text(time.hm(), fontSize = 24.sp, fontWeight = FontWeight.Bold, color = MainText)
         }
-        OutlinedButton(onClick = onChange, modifier = Modifier.heightIn(min = 56.dp)) {
-            Text("Change")
+        Box(
+            modifier = Modifier
+                .clip(RoundedCornerShape(14.dp))
+                .border(BorderStroke(1.dp, ForestGreen), RoundedCornerShape(14.dp))
+                .background(Color.White)
+                .clickable(
+                    indication = null,
+                    interactionSource = remember { MutableInteractionSource() }
+                ) { onChange() }
+                .padding(horizontal = 20.dp, vertical = 10.dp),
+            contentAlignment = Alignment.Center
+        ) {
+            Text("Change", fontWeight = FontWeight.Bold, color = ForestGreen, fontSize = 15.sp)
         }
     }
 }

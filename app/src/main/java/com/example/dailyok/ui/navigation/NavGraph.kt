@@ -17,6 +17,7 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.ui.Modifier
 import com.example.dailyok.DailyOkApp
@@ -65,75 +66,77 @@ fun AppNavGraph(app: DailyOkApp) {
     val backStackEntry by nav.currentBackStackEntryAsState()
     val currentRoute = backStackEntry?.destination?.route
 
-    // Bottom bar on Home, Medicines and Settings (see BottomNavBar.kt).
+    // Bottom bar on Home and Medicines (see BottomNavBar.kt).
     Scaffold(
+        containerColor = MaterialTheme.colorScheme.background,
         bottomBar = {
             if (currentRoute in bottomBarRoutes) BottomNavBar(nav, currentRoute)
         },
     ) { barPadding ->
-    NavHost(
-        navController = nav,
-        startDestination = if (done) Routes.HOME else Routes.WELCOME,
-        // consumeWindowInsets: the screens' own Scaffolds then don't add the bottom inset twice.
-        modifier = Modifier.padding(barPadding).consumeWindowInsets(barPadding),
-    ) {
-        composable(Routes.WELCOME) {
-            val scope = rememberCoroutineScope()
+        NavHost(
+            navController = nav,
+            startDestination = if (done) Routes.HOME else Routes.WELCOME,
+            // consumeWindowInsets: the screens' own Scaffolds then don't add the bottom inset twice.
+            modifier = Modifier
+                .padding(barPadding)
+                .consumeWindowInsets(barPadding),
+        ) {
+            composable(Routes.WELCOME) {
+                val scope = rememberCoroutineScope()
 
-            val vm: WelcomeViewModel = viewModel(
-                factory = viewModelFactory {
-                    initializer { WelcomeViewModel(app.profileRepository, context) }
-                }
-            )
-
-            WelcomeRoute(
-                viewModel = vm,
-                onFinished = {
-                    scope.launch {
-                        Log.d("Onboarding", "saving flag")
-                        app.userManager.setOnboardingDone(true)
-                        Log.d("Onboarding", "saved")
-                        nav.navigate(Routes.HOME) {
-                            popUpTo(Routes.WELCOME) { inclusive = true }
-                        }
+                val vm: WelcomeViewModel = viewModel(
+                    factory = viewModelFactory {
+                        initializer { WelcomeViewModel(app.profileRepository, context) }
                     }
-                },
+                )
 
-            )
+                WelcomeRoute(
+                    viewModel = vm,
+                    onFinished = {
+                        scope.launch {
+                            Log.d("Onboarding", "saving flag")
+                            app.userManager.setOnboardingDone(true)
+                            Log.d("Onboarding", "saved")
+                            nav.navigate(Routes.HOME) {
+                                popUpTo(Routes.WELCOME) { inclusive = true }
+                            }
+                        }
+                    },
+                )
+            }
+
+            composable(Routes.CONTACTS) {
+                // TODO: Implement contacts screen
+            }
+
+            composable(Routes.HOME) {
+                HomeRoute(
+                    viewModel = homeViewModel,
+                    onNeedHelp = { nav.navigate(Routes.HELP) },
+                    onMedsClick = { nav.navigateToTab(Routes.MEDS) },
+                    onSettingsClick = { nav.navigate(Routes.SETTINGS) }
+                )
+            }
+
+            composable(Routes.SETTINGS) {
+                SettingsRoute(
+                    viewModel = settingsViewModel,
+                    onBack = { nav.popBackStack() }
+                )
+            }
+
+            composable(Routes.HELP) {
+                HelpRoute(
+                    viewModel = helpViewModel,
+                    onCancel = {
+                        nav.popBackStack(Routes.HOME, inclusive = false)
+                    },
+                )
+            }
+
+            composable(Routes.MEDS) {
+                MedsScreen(onBack = { nav.popBackStack() })
+            }
         }
-
-        composable(Routes.CONTACTS) {
-            // TODO: Implement contacts screen
-        }
-
-
-        composable(Routes.HOME) {
-            HomeRoute(
-                viewModel = homeViewModel,
-                onNeedHelp = { nav.navigate(Routes.HELP) },
-                onMedsClick = { nav.navigateToTab(Routes.MEDS) },
-                onSettingsClick = { nav.navigateToTab(Routes.SETTINGS) }
-            )
-        }
-
-
-        composable(Routes.SETTINGS) {
-            SettingsRoute(viewModel = settingsViewModel)
-        }
-
-
-        composable(Routes.HELP) {
-            HelpRoute(
-                viewModel = helpViewModel,
-                onCancel = {
-                    nav.popBackStack(Routes.HOME, inclusive = false)
-                },
-            )
-        }
-        composable(Routes.MEDS) {
-            MedsScreen(onBack = { nav.popBackStack() })
-        }
-
-    }
     }
 }

@@ -15,6 +15,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -101,28 +102,14 @@ fun HomeScreen(
                 text = stringResource(R.string.Hello_Champ),
                 fontSize = 32.sp,
                 fontWeight = FontWeight.Bold,
-                color = TextMain
+                color = MaterialTheme.colorScheme.onBackground
             )
 
-            if (state.canPressOk) {
-                Button(
-                    onClick = onOkClick,
-                    shape = Corner,
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = WellGreen,
-                        contentColor = Color.White,
-                    ),
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .heightIn(min = 192.dp),
-                ) {
-                    Text(
-                        text = stringResource(R.string.Daily_Ok),
-                        fontSize = 26.sp,
-                        fontWeight = FontWeight.Bold,
-                    )
-                }
-            }
+            DailyCheckIn(
+                canPressOk = state.canPressOk,
+                lastActiveText = state.lastActiveText,
+                onOkClick = onOkClick
+            )
 
             MedicationPreview(
                 doses = state.upcomingMeds,
