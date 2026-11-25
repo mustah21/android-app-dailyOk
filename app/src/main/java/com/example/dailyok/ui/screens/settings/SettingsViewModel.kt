@@ -226,6 +226,7 @@ class SettingsViewModel(
             override fun <T : ViewModel> create(modelClass: Class<T>): T =
                 SettingsViewModel(context = context.applicationContext) as T
         }
+
     }
 }
 
