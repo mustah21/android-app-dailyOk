@@ -58,7 +58,9 @@ fun AppNavGraph(app: DailyOkApp) {
     val helpViewModel: HelpViewModel = viewModel(
         factory = HelpViewModel.factory(app.userManager, context)
     )
-    val settingsViewModel: SettingsViewModel = viewModel(factory = SettingsViewModel.factory(app.userManager))
+    val settingsViewModel: SettingsViewModel = viewModel(
+        factory = SettingsViewModel.factory(app.userManager, context)
+    )
 
     val backStackEntry by nav.currentBackStackEntryAsState()
     val currentRoute = backStackEntry?.destination?.route

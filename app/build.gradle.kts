@@ -1,6 +1,7 @@
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
+    alias(libs.plugins.ksp)
 }
 
 android {
@@ -39,6 +40,8 @@ android {
 }
 
 dependencies {
+
+    val roomVersion = "2.8.4"
     implementation(libs.places)
     coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.5")
     implementation(platform(libs.androidx.compose.bom))
@@ -65,4 +68,8 @@ dependencies {
     androidTestImplementation(libs.runner)
     androidTestImplementation(libs.espresso.core)
     implementation(libs.androidx.compose.material.icons.core)
+
+    implementation("androidx.room:room-runtime:2.8.4")
+    implementation("androidx.room:room-ktx:2.8.4")
+    ksp("androidx.room:room-compiler:2.8.4")
 }

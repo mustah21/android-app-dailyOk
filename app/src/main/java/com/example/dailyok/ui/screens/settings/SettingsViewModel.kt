@@ -16,6 +16,12 @@ import kotlinx.coroutines.launch
 import java.time.LocalDate
 import java.time.LocalTime
 import java.util.UUID
+import com.example.dailyok.data.db.ActivityEventEntity
+import com.example.dailyok.data.db.AppDatabase
+import kotlinx.coroutines.flow.map
+import java.time.Instant
+import java.time.ZoneId
+
 
 data class Contact(
     val id: String = UUID.randomUUID().toString(),
@@ -51,9 +57,9 @@ data class SettingsUiState(
     val bedTime: LocalTime = LocalTime.of(22, 0),
     val morningCheckTime: LocalTime = LocalTime.of(10, 0),
     val routineError: String? = null,
-    val draft: ContactDraft? = null,          // non-null = dialog is open
+    val draft: ContactDraft? = null,
     val activity: List<ActivityDay> = emptyList(),
-)
+    )
 
 class SettingsViewModel(
     private val userManager: UserManager? = null,
@@ -70,7 +76,6 @@ class SettingsViewModel(
             wakeTime = store?.config()?.wakeTime ?: LocalTime.of(7, 0),
             bedTime = store?.config()?.bedTime ?: LocalTime.of(22, 0),
             morningCheckTime = store?.config()?.morningCheckTime ?: LocalTime.of(10, 0),
-            activity = sampleActivity(),
         )
     )
     val state: StateFlow<SettingsUiState> = _state.asStateFlow()
@@ -83,6 +88,15 @@ class SettingsViewModel(
                 }
             }
         }
+
+        appContext?.let { ctx ->
+            viewModelScope.launch {
+                AppDatabase.get(ctx).activityEventDao().observeLatest()
+                    .map { it.toActivityDays() }
+                    .collect { days -> _state.update { it.copy(activity = days) } }
+            }
+        }
+
     }
 
     // Inactivity period
@@ -201,10 +215,10 @@ class SettingsViewModel(
         const val MIN_HOURS = 2
         const val MAX_HOURS = 6
 
-        fun factory(userManager: UserManager) = object : ViewModelProvider.Factory {
+        fun factory(userManager: UserManager, context: Context) = object : ViewModelProvider.Factory {
             @Suppress("UNCHECKED_CAST")
             override fun <T : ViewModel> create(modelClass: Class<T>): T =
-                SettingsViewModel(userManager = userManager) as T
+                SettingsViewModel(userManager = userManager, context = context.applicationContext) as T
         }
 
         fun factory(context: Context) = object : ViewModelProvider.Factory {
@@ -212,6 +226,7 @@ class SettingsViewModel(
             override fun <T : ViewModel> create(modelClass: Class<T>): T =
                 SettingsViewModel(context = context.applicationContext) as T
         }
+
     }
 }
 
@@ -220,22 +235,21 @@ private fun sampleContacts() = listOf(
     Contact(name = "Matti (neighbour)", phone = "+358 50 765 4321"),
 )
 
-private fun sampleActivity(): List<ActivityDay> {
-    val today = LocalDate.now()
-    return listOf(
-        ActivityDay(today, "Normal activity", emptyList()),
-        ActivityDay(
-            today.minusDays(1), "1 alert",
-            listOf(
-                ActivityAlert(LocalTime.of(14, 20), "No activity for 4 hours", urgent = true),
-                ActivityAlert(LocalTime.of(14, 35), "Anna confirmed you are OK", urgent = false),
-            ),
-        ),
-        ActivityDay(today.minusDays(2), "Normal activity", emptyList()),
-        ActivityDay(
-            today.minusDays(3), "1 alert",
-            listOf(ActivityAlert(LocalTime.of(11, 5), "No activity for 4 hours", urgent = true)),
-        ),
-        ActivityDay(today.minusDays(4), "Normal activity", emptyList()),
-    )
+private fun List<ActivityEventEntity>.toActivityDays(): List<ActivityDay> {
+    val zone = ZoneId.systemDefault()
+    return map { it to Instant.ofEpochMilli(it.timestamp).atZone(zone) }
+        .groupBy({ (_, time) -> time.toLocalDate() }, { it })
+        .map { (date, items) ->
+            ActivityDay(
+                date = date,
+                summary = if (items.size == 1) "1 activity" else "${items.size} activities",
+                alerts = items.map { (event, time) ->
+                    ActivityAlert(
+                        time = time.toLocalTime(),
+                        message = event.type.replaceFirstChar { it.uppercase() },
+                        urgent = false,
+                    )
+                },
+            )
+        }
 }
