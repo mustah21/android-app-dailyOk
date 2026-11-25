@@ -1,39 +1,17 @@
 package com.example.dailyok.ui.screens.home
 
-import java.time.LocalDate
-import java.time.LocalTime
+import com.example.dailyok.domain.meds.Dose
 import java.time.format.DateTimeFormatter
 
 private const val DAY_MS = 24 * 60 * 60 * 1_000L
-
-enum class MedStatus {
-    UPCOMING,
-    DUE,
-    TAKEN
-}
-
-data class MedicationReminder(
-    val name: String = "BP pill",
-    val time: LocalTime = LocalTime.of(8, 0),
-    val lastTakenEpochDay: Long = -1L
-) {
-    val isTakenToday: Boolean
-        get() = lastTakenEpochDay == LocalDate.now().toEpochDay()
-
-    val status: MedStatus
-        get() = when {
-            isTakenToday -> MedStatus.TAKEN
-            !LocalTime.now().isBefore(time) -> MedStatus.DUE
-            else -> MedStatus.UPCOMING
-        }
-}
 
 data class HomeUiState(
     val isPaused: Boolean = false,
     val lastOkClickTime: Long = 0L,
     val hasUsageAccess: Boolean = false,
     val lastActivity: String? = null,
-    val medication: MedicationReminder = MedicationReminder()
+    /** Next medicines to take, for the home screen preview. */
+    val upcomingMeds: List<Dose> = emptyList(),
 ) {
     val isRecent: Boolean
         get() = System.currentTimeMillis() - lastOkClickTime < DAY_MS
