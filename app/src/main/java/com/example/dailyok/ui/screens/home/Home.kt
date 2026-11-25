@@ -6,11 +6,15 @@ import android.provider.Settings
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -32,6 +36,8 @@ private val TextMain = Color(0xFF1A1A1A)
 private val TextSecondary = Color(0xFF4A4A4A)
 private val Primary = Color(0xFF1F4E9C)
 private val HelpRed = Color(0xFFB3261E)
+private val WellGreen = Color(0xFF2E7D32)
+private val Corner = RoundedCornerShape(16.dp)
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
@@ -98,25 +104,23 @@ fun HomeScreen(
                 color = TextMain
             )
 
-            DailyCheckIn(
-                canPressOk = state.canPressOk,
-                lastActiveText = state.lastActiveText,
-                onOkClick = onOkClick
-            )
-
-            Text(
-                text = "Last phone activity: ${state.lastActivity ?: "none yet"}",
-                fontSize = 18.sp,
-                color = TextSecondary
-            )
-
-            if (!state.hasUsageAccess) {
-                Text(
-                    text = "Usage access is needed to read when you last used your phone.",
-                    color = TextSecondary
-                )
-                Button(onClick = onGrantUsageAccess) {
-                    Text("Grant usage access")
+            if (state.canPressOk) {
+                Button(
+                    onClick = onOkClick,
+                    shape = Corner,
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = WellGreen,
+                        contentColor = Color.White,
+                    ),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .heightIn(min = 192.dp),
+                ) {
+                    Text(
+                        text = stringResource(R.string.Daily_Ok),
+                        fontSize = 26.sp,
+                        fontWeight = FontWeight.Bold,
+                    )
                 }
             }
 

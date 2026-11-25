@@ -20,6 +20,9 @@
         android:name="android.permission.PACKAGE_USAGE_STATS"
         tools:ignore="ProtectedPermissions" />
 
+    <!-- SMS alerts to emergency contacts when there is no check-in response or when help is requested -->
+    <uses-permission android:name="android.permission.SEND_SMS" />
+
     <application
         android:name=".DailyOkApp"
         android:allowBackup="true"
