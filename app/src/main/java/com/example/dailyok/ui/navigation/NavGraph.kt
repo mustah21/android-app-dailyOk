@@ -24,7 +24,8 @@ import com.example.dailyok.ui.screens.help.HelpRoute
 import com.example.dailyok.ui.screens.help.HelpViewModel
 import com.example.dailyok.ui.screens.home.HomeRoute
 import com.example.dailyok.ui.screens.home.HomeViewModel
-import com.example.dailyok.ui.screens.meds.MedsScreen
+import com.example.dailyok.ui.screens.meds.MedsRoute
+import com.example.dailyok.ui.screens.meds.MedsViewModel
 import com.example.dailyok.ui.screens.settings.SettingsRoute
 import com.example.dailyok.ui.screens.settings.SettingsViewModel
 import com.example.dailyok.ui.screens.welcome.WelcomeRoute
@@ -129,7 +130,10 @@ fun AppNavGraph(app: DailyOkApp) {
             )
         }
         composable(Routes.MEDS) {
-            MedsScreen(onBack = { nav.popBackStack() })
+            val medsVm: MedsViewModel = viewModel(
+                factory = MedsViewModel.factory(context)
+            )
+            MedsRoute(viewModel = medsVm)
         }
 
     }

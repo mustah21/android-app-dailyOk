@@ -1,6 +1,7 @@
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
+    alias(libs.plugins.ksp)
 }
 
 android {
@@ -65,4 +66,7 @@ dependencies {
     androidTestImplementation(libs.runner)
     androidTestImplementation(libs.espresso.core)
     implementation(libs.androidx.compose.material.icons.core)
+    implementation("androidx.room:room-runtime:2.7.1")
+    implementation("androidx.room:room-ktx:2.7.1")
+    ksp("androidx.room:room-compiler:2.7.1")
 }
