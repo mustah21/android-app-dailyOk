@@ -2,6 +2,7 @@ package com.example.dailyok.ui.screens.settings
 
 
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -28,6 +29,7 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Switch
+import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -94,7 +96,10 @@ fun SettingsScreen(
             Text("Settings", style = MaterialTheme.typography.headlineLarge)
 
             // Appearance: night mode
-            Card(Modifier.fillMaxWidth()) {
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                border = BorderStroke(1.5.dp, MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)),
+            ) {
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -116,7 +121,15 @@ fun SettingsScreen(
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
                     }
-                    Switch(checked = state.nightMode, onCheckedChange = null)
+                    Switch(
+                        checked = state.nightMode,
+                        onCheckedChange = null,
+                        colors = SwitchDefaults.colors(
+                            uncheckedThumbColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                            uncheckedTrackColor = MaterialTheme.colorScheme.surface,
+                            uncheckedBorderColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                        ),
+                    )
                 }
             }
 
