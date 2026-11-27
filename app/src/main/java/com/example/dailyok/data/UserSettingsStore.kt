@@ -22,6 +22,7 @@ class UserManager(
         val USER_NAME_KEY = stringPreferencesKey("USER_NAME")
         val USER_MAIL_KEY = stringPreferencesKey("MAIL_KEY")
         val ONBOARDING_DONE_KEY = booleanPreferencesKey("ONBOARDING_DONE")
+        val NIGHT_MODE_KEY = booleanPreferencesKey("NIGHT_MODE")
 
         val CONTACT1_NAME_KEY = stringPreferencesKey("CONTACT1_NAME")
         val CONTACT1_PHONE_KEY = stringPreferencesKey("CONTACT1_PHONE")
@@ -138,6 +139,10 @@ class UserManager(
         context.myDataStore.edit { it[ONBOARDING_DONE_KEY] = done }
     }
 
+    suspend fun setNightMode(enabled: Boolean) {
+        context.myDataStore.edit { it[NIGHT_MODE_KEY] = enabled }
+    }
+
     // Flows to retrieve data from preferences
     val userDOBFlow: Flow<Int> = context.myDataStore.data.map {
         it[USER_DOB_KEY] ?: 0
@@ -156,6 +161,10 @@ class UserManager(
     }
 
     val onboardingDone: Flow<Boolean> get() = onboardingDoneFlow
+
+    val nightModeFlow: Flow<Boolean> = context.myDataStore.data.map {
+        it[NIGHT_MODE_KEY] ?: false
+    }
 
     val contactsFlow: Flow<List<Contact>> = context.myDataStore.data.map { prefs ->
         val list = mutableListOf<Contact>()

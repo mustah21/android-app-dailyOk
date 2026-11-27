@@ -1,6 +1,7 @@
 package com.example.dailyok.ui.theme
 
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
@@ -32,6 +33,26 @@ private val DailyOkColorScheme = lightColorScheme(
     outline = Outline,
 )
 
+private val DailyOkDarkColorScheme = darkColorScheme(
+    primary = DarkPrimaryBlue,
+    onPrimary = OnColor,
+    secondary = DarkAllWellGreen,
+    onSecondary = OnColor,
+    secondaryContainer = DarkAllWellLight,
+    onSecondaryContainer = DarkMainText,
+    tertiary = DarkWarningAmber,
+    onTertiary = DarkOnWarning,
+    error = HelpRed,
+    onError = OnColor,
+    background = DarkBackground,
+    onBackground = DarkMainText,
+    surface = DarkBackground,
+    onSurface = DarkMainText,
+    surfaceVariant = DarkSurface,
+    onSurfaceVariant = DarkSecondaryText,
+    outline = DarkOutline,
+)
+
 /** Colours for the app's states, so screens never pick status colours by hand. */
 @Immutable
 data class StatusColors(
@@ -45,17 +66,32 @@ data class StatusColors(
     val secondaryText: Color = SecondaryText,
 )
 
+private val DarkStatusColors = StatusColors(
+    allWell = DarkAllWellGreen,
+    onAllWell = OnColor,
+    allWellLight = DarkAllWellLight,
+    help = HelpRed,
+    onHelp = OnColor,
+    warning = DarkWarningAmber,
+    onWarning = DarkOnWarning,
+    secondaryText = DarkSecondaryText,
+)
+
 private val LocalStatusColors = staticCompositionLocalOf { StatusColors() }
 
 /**
- * Wrap every screen in DailyOkTheme. Light theme only for now (the style guide
- * makes dark mode optional for the demo).
+ * Wrap every screen in DailyOkTheme. Supports light and night (dark grey) mode.
  */
 @Composable
-fun DailyOkTheme(content: @Composable () -> Unit) {
-    CompositionLocalProvider(LocalStatusColors provides StatusColors()) {
+fun DailyOkTheme(
+    darkTheme: Boolean = false,
+    content: @Composable () -> Unit,
+) {
+    val colorScheme = if (darkTheme) DailyOkDarkColorScheme else DailyOkColorScheme
+    val statusColors = if (darkTheme) DarkStatusColors else StatusColors()
+    CompositionLocalProvider(LocalStatusColors provides statusColors) {
         MaterialTheme(
-            colorScheme = DailyOkColorScheme,
+            colorScheme = colorScheme,
             typography = DailyOkTypography,
             shapes = DailyOkShapes,
             content = content,

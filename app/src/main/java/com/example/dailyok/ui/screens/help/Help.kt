@@ -92,7 +92,7 @@ private fun HelpRequestContent(
         Text(
             text = "Tap the button below to alert both of your emergency contacts right now.",
             fontSize = 18.sp,
-            color = Color(0xFF4A4A4A),
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
             textAlign = TextAlign.Center,
         )
         Spacer(Modifier.height(40.dp))
@@ -149,14 +149,14 @@ private fun HelpSentContent(
         Text(
             text = "We have sent an alert to your emergency contacts.",
             fontSize = 18.sp,
-            color = Color(0xFF4A4A4A),
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
             textAlign = TextAlign.Center,
         )
         Spacer(Modifier.weight(1f))
         Text(
             text = "Pressed by mistake? Tap Cancel and we will tell them you are OK.",
             fontSize = 16.sp,
-            color = Color(0xFF4A4A4A),
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
             textAlign = TextAlign.Center,
         )
         Button(

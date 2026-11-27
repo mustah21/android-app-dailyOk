@@ -6,8 +6,10 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -25,6 +27,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Slider
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -32,6 +35,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
@@ -49,6 +53,7 @@ fun SettingsRoute(viewModel: SettingsViewModel) {
         onInactivityHoursChange = viewModel::onInactivityHoursChange,
         onWakeTimeChange = viewModel::onWakeTimeChange,
         onBedTimeChange = viewModel::onBedTimeChange,
+        onNightModeChange = viewModel::onNightModeChange,
         onAddContact = viewModel::onAddContact,
         onEditContact = viewModel::onEditContact,
         onDeleteContact = viewModel::onDeleteContact,
@@ -67,6 +72,7 @@ fun SettingsScreen(
     onInactivityHoursChange: (Int) -> Unit,
     onWakeTimeChange: (LocalTime) -> Unit = {},
     onBedTimeChange: (LocalTime) -> Unit = {},
+    onNightModeChange: (Boolean) -> Unit = {},
     onAddContact: () -> Unit,
     onEditContact: (String) -> Unit,
     onDeleteContact: (String) -> Unit,
@@ -86,6 +92,33 @@ fun SettingsScreen(
             verticalArrangement = Arrangement.spacedBy(20.dp),
         ) {
             Text("Settings", style = MaterialTheme.typography.headlineLarge)
+
+            // Appearance: night mode
+            Card(Modifier.fillMaxWidth()) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .heightIn(min = 64.dp)
+                        .toggleable(
+                            value = state.nightMode,
+                            role = Role.Switch,
+                            onValueChange = onNightModeChange,
+                        )
+                        .padding(horizontal = 16.dp, vertical = 12.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                ) {
+                    Column(Modifier.weight(1f).padding(end = 12.dp)) {
+                        Text("Night mode", style = MaterialTheme.typography.titleMedium)
+                        Text(
+                            "Dark grey background for easier viewing at night",
+                            style = MaterialTheme.typography.bodyLarge,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                    Switch(checked = state.nightMode, onCheckedChange = null)
+                }
+            }
 
             // My day: wake up and bed time (see RoutineSection.kt)
             RoutineSection(

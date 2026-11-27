@@ -10,11 +10,14 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.RequiresApi
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalView
 import androidx.core.content.ContextCompat
+import androidx.core.view.WindowCompat
 import com.example.dailyok.data.CheckStore
 import com.example.dailyok.data.DemoSettings
 import com.example.dailyok.platform.check.ActivityTracker
@@ -46,10 +49,20 @@ class MainActivity : ComponentActivity() {
             val demo by DemoSettings.flow(this).collectAsState()   // Settings > Demo
 
             val savedContacts by app.userManager.contactsFlow.collectAsState(initial = emptyList())
+            val nightMode by app.userManager.nightModeFlow.collectAsState(initial = false)
             val contactNames = if (savedContacts.isEmpty()) listOf("Contact 1", "Contact 2") else savedContacts.map { it.name }
             val contactPhones = savedContacts.map { it.phone }
 
-            DailyOkTheme {
+            val view = LocalView.current
+            if (!view.isInEditMode) {
+                SideEffect {
+                    val controller = WindowCompat.getInsetsController(window, view)
+                    controller.isAppearanceLightStatusBars = !nightMode
+                    controller.isAppearanceLightNavigationBars = !nightMode
+                }
+            }
+
+            DailyOkTheme(darkTheme = nightMode) {
                 CheckInHost(
                     contactNames = contactNames,
                     timings = demo.timings,

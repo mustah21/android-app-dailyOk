@@ -15,13 +15,13 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -30,12 +30,8 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.LifecycleResumeEffect
 import com.example.dailyok.R
 import com.example.dailyok.domain.meds.Dose
+import com.example.dailyok.ui.theme.DailyOkTheme
 
-private val TextMain = Color(0xFF1A1A1A)
-private val TextSecondary = Color(0xFF4A4A4A)
-private val Primary = Color(0xFF1F4E9C)
-private val HelpRed = Color(0xFFB3261E)
-private val WellGreen = Color(0xFF2E7D32)
 private val Corner = RoundedCornerShape(16.dp)
 
 @RequiresApi(Build.VERSION_CODES.O)
@@ -100,7 +96,7 @@ fun HomeScreen(
                 text = stringResource(R.string.Hello_Champ),
                 fontSize = 32.sp,
                 fontWeight = FontWeight.Bold,
-                color = TextMain
+                color = MaterialTheme.colorScheme.onBackground
             )
 
             if (state.canPressOk) {
@@ -108,8 +104,8 @@ fun HomeScreen(
                     onClick = onOkClick,
                     shape = Corner,
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = WellGreen,
-                        contentColor = Color.White,
+                        containerColor = DailyOkTheme.status.allWell,
+                        contentColor = DailyOkTheme.status.onAllWell,
                     ),
                     modifier = Modifier
                         .fillMaxWidth()

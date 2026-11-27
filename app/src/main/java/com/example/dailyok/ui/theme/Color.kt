@@ -18,3 +18,15 @@ val HelpRed = Color(0xFFB3261E)          // "I need help" and alarm ONLY (6.5:1 
 val WarningAmber = Color(0xFFFFE8A3)     // Pause on, low battery (14.4:1 with MainText)
 
 val OnColor = Color(0xFFFFFFFF)          // Text on blue, green and red
+
+// Night mode palette (dark grey background, high-contrast light text, help stays red)
+val DarkBackground = Color(0xFF1E1E1E)     // Dark grey screen background
+val DarkSurface = Color(0xFF2C2C2E)        // Elevated grey cards and panels
+val DarkMainText = Color(0xFFF2F2F2)       // Primary text on dark grey (>13:1)
+val DarkSecondaryText = Color(0xFFB8B8BE)  // Labels, times, hints on dark grey (>7:1)
+val DarkOutline = Color(0xFF424246)        // Subtle borders and dividers
+val DarkPrimaryBlue = Color(0xFF356AC3)    // Main buttons and active switches
+val DarkAllWellGreen = Color(0xFF2E854B)   // "All is well" / taken status
+val DarkAllWellLight = Color(0xFF1A3324)   // Dark green-tinted status card background
+val DarkWarningAmber = Color(0xFF4A3B12)   // Dark amber banner background
+val DarkOnWarning = Color(0xFFFFE8A3)      // Light amber text on dark warning banner

@@ -51,6 +51,7 @@ data class SettingsUiState(
     val bedTime: LocalTime = LocalTime.of(22, 0),
     val morningCheckTime: LocalTime = LocalTime.of(10, 0),
     val routineError: String? = null,
+    val nightMode: Boolean = false,
     val draft: ContactDraft? = null,          // non-null = dialog is open
     val activity: List<ActivityDay> = emptyList(),
 )
@@ -81,6 +82,20 @@ class SettingsViewModel(
                 manager.contactsFlow.collect { contactList ->
                     _state.update { it.copy(contacts = contactList) }
                 }
+            }
+            viewModelScope.launch {
+                manager.nightModeFlow.collect { enabled ->
+                    _state.update { it.copy(nightMode = enabled) }
+                }
+            }
+        }
+    }
+
+    fun onNightModeChange(enabled: Boolean) {
+        _state.update { it.copy(nightMode = enabled) }
+        userManager?.let { manager ->
+            viewModelScope.launch {
+                manager.setNightMode(enabled)
             }
         }
     }

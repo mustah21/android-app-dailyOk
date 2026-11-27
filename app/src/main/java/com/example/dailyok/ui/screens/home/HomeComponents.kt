@@ -37,17 +37,10 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.dailyok.R
+import com.example.dailyok.ui.theme.DailyOkTheme
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
-
-private val TextMain = Color(0xFF1A1A1A)
-private val TextSecondary = Color(0xFF4A4A4A)
-private val Primary = Color(0xFF1F4E9C)
-private val WellGreen = Color(0xFF1E6B3A)
-private val WellGreenBg = Color(0xFFE7F3EC)
-private val HelpRed = Color(0xFFB3261E)
-private val WarningBg = Color(0xFFFFE8A3)
 
 private val Corner = RoundedCornerShape(16.dp)
 
@@ -64,7 +57,7 @@ fun HomeHeader(
             text = LocalDate.now()
                 .format(DateTimeFormatter.ofPattern("EEEE, MMMM d")),
             fontSize = 18.sp,
-            color = TextSecondary,
+            color = DailyOkTheme.status.secondaryText,
             modifier = Modifier.weight(1f)
         )
 
@@ -75,7 +68,7 @@ fun HomeHeader(
             Icon(
                 imageVector = Icons.Filled.Settings,
                 contentDescription = "Settings",
-                tint = TextSecondary,
+                tint = DailyOkTheme.status.secondaryText,
                 modifier = Modifier.size(32.dp)
             )
         }
@@ -93,7 +86,7 @@ fun DailyCheckIn(
             onClick = onOkClick,
             shape = Corner,
             colors = ButtonDefaults.buttonColors(
-                containerColor = Primary
+                containerColor = MaterialTheme.colorScheme.primary
             ),
             modifier = Modifier
                 .fillMaxWidth()
@@ -109,15 +102,15 @@ fun DailyCheckIn(
         Text(
             text = stringResource(R.string.LET_FAMILY_KNOW),
             fontSize = 18.sp,
-            color = TextSecondary
+            color = DailyOkTheme.status.secondaryText
         )
     } else {
         StatusBanner(
             title = "All is well",
             subtitle = lastActiveText,
             icon = Icons.Filled.Check,
-            background = WellGreenBg,
-            contentColor = WellGreen
+            background = DailyOkTheme.status.allWellLight,
+            contentColor = DailyOkTheme.status.allWell
         )
     }
 }
@@ -149,13 +142,13 @@ fun StatusBanner(
             text = title,
             fontSize = 24.sp,
             fontWeight = FontWeight.Bold,
-            color = TextMain
+            color = MaterialTheme.colorScheme.onSurface
         )
 
         Text(
             text = subtitle,
             fontSize = 16.sp,
-            color = TextSecondary
+            color = DailyOkTheme.status.secondaryText
         )
     }
 }
@@ -168,8 +161,8 @@ fun NeedHelpButton(
         onClick = onClick,
         shape = Corner,
         colors = ButtonDefaults.buttonColors(
-            containerColor = HelpRed,
-            contentColor = Color.White
+            containerColor = DailyOkTheme.status.help,
+            contentColor = DailyOkTheme.status.onHelp
         ),
         modifier = Modifier
             .fillMaxWidth()
@@ -209,7 +202,7 @@ fun PauseSwitch(
         Text(
             text = stringResource(R.string.PAUSE_FOR_HOLIDAYS),
             fontSize = 20.sp,
-            color = TextMain,
+            color = MaterialTheme.colorScheme.onBackground,
             modifier = Modifier.weight(1f)
         )
 
